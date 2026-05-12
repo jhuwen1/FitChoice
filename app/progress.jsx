@@ -1,0 +1,10 @@
+app/
+  dashboard.jsx
+  progress.jsx
+  exercisepool.jsx
+  infoscreen.jsx
+  login.jsx
+  macroscanner.jsx
+  profile.jsx
+  add.jsx
+  _layout.jsx
