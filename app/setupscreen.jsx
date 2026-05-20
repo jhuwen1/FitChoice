@@ -1,6 +1,5 @@
 import { Asset } from "expo-asset";
 import { GLView } from "expo-gl";
-import { Renderer } from "expo-three";
 import * as THREE from "three";
 import { GLTFLoader } from "three-stdlib";
 
@@ -21,7 +20,6 @@ import { db } from "../firebaseConfig";
 
 export default function SetupScreen() {
   const router = useRouter();
-
   const { user } = useAuth();
 
   const [index, setIndex] = useState(0);
@@ -33,15 +31,12 @@ export default function SetupScreen() {
 
   const sceneRef = useRef();
   const modelRef = useRef();
-
   const modelsMap = useRef({});
 
   const velocity = useRef(0);
   const rotation = useRef(0);
-
   const scale = useRef(1);
   const lastDistance = useRef(0);
-
   const isTouching = useRef(false);
 
   const models = {
@@ -56,13 +51,11 @@ export default function SetupScreen() {
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => true,
-
     onPanResponderGrant: () => {
       isTouching.current = true;
       lastDistance.current = 0;
       setShowHints(false);
     },
-
     onPanResponderMove: (evt, gesture) => {
       const touches = evt.nativeEvent.touches;
 
@@ -73,12 +66,10 @@ export default function SetupScreen() {
       if (touches.length === 2) {
         const dx = touches[0].pageX - touches[1].pageX;
         const dy = touches[0].pageY - touches[1].pageY;
-
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (lastDistance.current) {
           let diff = distance - lastDistance.current;
-
           scale.current += diff * 0.005;
           scale.current = Math.max(0.5, Math.min(3, scale.current));
 
@@ -90,11 +81,9 @@ export default function SetupScreen() {
             );
           }
         }
-
         lastDistance.current = distance;
       }
     },
-
     onPanResponderRelease: () => {
       isTouching.current = false;
       lastDistance.current = 0;
@@ -107,25 +96,24 @@ export default function SetupScreen() {
       await asset.downloadAsync();
 
       const loader = new GLTFLoader();
-
       const model = await new Promise((resolve, reject) => {
         loader.load(asset.uri, resolve, undefined, reject);
       }).then((gltf) => gltf.scene);
 
       model.position.set(0, -1, 0);
       model.scale.set(1.5, 1.5, 1.5);
-
       model.visible = i === index;
 
       scene.add(model);
-
       modelsMap.current[i] = model;
     }
-
     modelRef.current = modelsMap.current[index];
   };
 
   const onContextCreate = async (gl) => {
+    // Dynamically require expo-three only when the 3D context is actively mounting
+    const { Renderer } = require("expo-three");
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#0f172a");
 
@@ -158,7 +146,6 @@ export default function SetupScreen() {
         } else {
           rotation.current += 0.003;
         }
-
         modelRef.current.rotation.y = rotation.current;
       }
 
@@ -167,7 +154,6 @@ export default function SetupScreen() {
     };
 
     animate();
-
     sceneRef.current = scene;
   };
 
@@ -179,7 +165,6 @@ export default function SetupScreen() {
     }
 
     const nextModel = modelsMap.current[index];
-
     if (nextModel) {
       nextModel.visible = true;
       modelRef.current = nextModel;
@@ -249,19 +234,17 @@ export default function SetupScreen() {
           ]}
           onPress={async () => {
             if (loading || selected) return;
-
             if (!user) {
               console.log("No user logged in");
               return;
             }
 
             setLoading(true);
-
             try {
               await setDoc(
                 doc(db, "users", user.uid),
                 {
-                  goal: currentModels[index].title.toLowerCase(), 
+                  goal: currentModels[index].title.toLowerCase(),
                   gender: gender,
                 },
                 { merge: true }
@@ -315,18 +298,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 60,
   },
-
   title: {
     color: "#fff",
     fontSize: 18,
     marginBottom: 10,
   },
-
   genderRow: {
     flexDirection: "row",
     marginBottom: 10,
   },
-
   genderBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -334,21 +314,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#1e293b",
     borderRadius: 20,
   },
-
   activeBtn: {
     backgroundColor: "#f97316",
   },
-
   genderText: {
     color: "#fff",
     fontWeight: "600",
   },
-
   viewer: {
     width: "100%",
     height: 400,
   },
-
   hintContainer: {
     position: "absolute",
     bottom: 10,
@@ -358,14 +334,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
   },
-
   hintText: {
     color: "#fff",
     fontSize: 12,
     textAlign: "center",
     opacity: 0.8,
   },
-
   navContainer: {
     position: "absolute",
     bottom: 40,
@@ -375,15 +349,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
   },
-
   chevronBtn: {
-    color: "#fff",
     width: 70,
     height: 70,
     justifyContent: "center",
     alignItems: "center",
   },
-
   chevron: {
     width: 30,
     height: 30,
@@ -391,17 +362,12 @@ const styles = StyleSheet.create({
     borderRightWidth: 6,
     borderColor: "#fff",
   },
-
   leftChevron: {
-    color: "#fff",
     transform: [{ rotate: "-135deg" }],
   },
-
   rightChevron: {
-    color: "#fff",
     transform: [{ rotate: "45deg" }],
   },
-
   selectBtn: {
     flex: 1,
     marginHorizontal: 10,
@@ -410,27 +376,22 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
   },
-
   selectBtnLoading: {
     backgroundColor: "#fb923c",
   },
-
   selectBtnSuccess: {
     backgroundColor: "#22c55e",
   },
-
   selectText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
-
   checkMark: {
     color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
   },
-
   chevronPressed: {
     borderColor: "#f97316",
   },
