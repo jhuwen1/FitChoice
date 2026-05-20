@@ -24,7 +24,6 @@ export default function Layout() {
         <Stack.Screen name="macroscanner" />
         <Stack.Screen name="exercisepool" />
         <Stack.Screen name="progress" />
-        <Stack.Screen name="profile" />
       </Stack>
     </AuthProvider>
   );

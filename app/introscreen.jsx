@@ -2,13 +2,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -106,13 +106,14 @@ export default function Index() {
         />
       </View>
 
+      {/* Fixed: Removed the floating '+' symbol right after the map closing parenthesis */}
       <View style={styles.dots}>
         {data.map((_, index) => (
           <View
             key={index}
             style={[styles.dot, activeIndex === index && styles.activeDot]}
           />
-        ))}+
+        ))}
       </View>
 
       <Text style={styles.tagline}>Your Choice, Your Growth</Text>
@@ -189,6 +190,11 @@ const styles = StyleSheet.create({
     width: "115%",
     height: "100%",
     left: "-7.5%",
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover", 
   },
   cardImage: {
     width: "100%",

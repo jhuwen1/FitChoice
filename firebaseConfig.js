@@ -1,5 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getReactNativePersistence, initializeAuth } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
@@ -17,11 +18,18 @@ const firebaseConfig = {
   measurementId: "G-X5DLJBP5B6",
 };
 
+// 1. Initialize the Firebase App instance
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+// 2. Initialize Auth with native React Native AsyncStorage persistence
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
+
+// 3. Initialize Storage
 export const storage = getStorage(app);
 
+// 4. Initialize Firestore
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
   useFetchStreams: false,

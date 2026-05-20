@@ -1,22 +1,23 @@
 import { useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    ImageBackground,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  ImageBackground,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebaseConfig";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-// ALL 4 ORIGINAL EXERCISE ARRAYS MAINTAINED FOR AUTO-SELECTION LOGIC
 const MASTER_POOL = {
   daya: {
     title: "Arm Dominant - Upper split",
@@ -69,172 +70,208 @@ const MASTER_POOL = {
   }
 };
 
-// Fallback images matching the text banners in your mockups
 const CATEGORY_BACKGROUNDS = {
   upperback: "https://images.unsplash.com/photo-1603287634276-ae4efe00774a?q=80&w=600&auto=format&fit=crop",
   middleback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
+  midback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
+  midlowerback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
   lowerback: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop",
-  bicep: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
-  biceps: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
+  biceplonghead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
   bicepslonghead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
   bicepsshorthead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
   forearm: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop",
   forearms: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop",
   quads: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?q=80&w=600&auto=format&fit=crop",
-  chest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop",
-  sternalhead: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop",
-  clavicularhead: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop",
-  clavicular: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop"
+  upperchest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop",
+  midchest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop"
 };
 
-export default function ExercisePool() {
-  const router = useRouter();
+const EXERCISE_ANIMATIONS = {
+  "default": "https://fitnessprogrammer.com/wp-content/uploads/2021/05/Side-Plank-With-Dumbbell-Lateral-Raise.gif",
+  "Barbell Back Squat": "https://fitnessprogrammer.com/wp-content/uploads/2021/02/Barbell-Back-Squat.gif",
+  "Leg Press": "https://fitnessprogrammer.com/wp-content/uploads/2015/11/Leg-Press.gif",
+  "Romanian Deadlift": "https://fitnessprogrammer.com/wp-content/uploads/2021/02/Barbell-Romanian-Deadlift.gif",
+  "Flat Barbell Bench Press": "https://fitnessprogrammer.com/wp-content/uploads/2021/01/Barbell-Bench-Press.gif"
+};
+
+export default function FitChoiceExercisePool() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState({ goal: "lean", framework: "arm dominant" });
-  const [selectedDay, setSelectedDay] = useState(1); // 1 to 30 Days
-  const [currentDayPool, setCurrentDayPool] = useState("daya");
+  const [profile, setProfile] = useState({ goal: "lean", framework: "chest dominant" });
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [currentDayPool, setCurrentDayPool] = useState("dayi");
   const [expandedCategory, setExpandedCategory] = useState(null);
-  const [customSelections, setCustomSelections] = useState({});
+  const [activeExercise, setActiveExercise] = useState(null);
+  const [activeCategoryKey, setActiveCategoryKey] = useState(null);
+  const [workoutProgress, setWorkoutProgress] = useState({}); 
+  const [completedSets, setCompletedSets] = useState([]);
+  const [restSeconds, setRestSeconds] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
 
-  // Fetch target parameters directly from setup profile
   useEffect(() => {
-    async function loadUserProfile() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    async function fetchUserMetrics() {
+      if (!user) { setLoading(false); return; }
       try {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
           setProfile({
-            goal: data.bodyGoal || "lean", 
-            framework: data.frameworkType || "arm dominant",
+            goal: data.bodyGoal || "lean",
+            framework: data.frameworkType || "chest dominant"
           });
         }
       } catch (err) {
-        console.error("Error matching profile metrics:", err);
+        console.warn("Firestore profiles unavailable, running local state execution:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadUserProfile();
+    fetchUserMetrics();
   }, [user]);
 
-  // Determine standard schedule routing dynamically over a 5-day active cycle week
   useEffect(() => {
-    const cycleDay = ((selectedDay - 1) % 7) + 1; // Converts 1-30 scale to a clean Mon-Sun block
-    const isArmType = profile.framework.toLowerCase() === "arm dominant";
+    const cycleDay = ((selectedDay - 1) % 7) + 1; 
+    const isArmSplit = profile.framework.toLowerCase() === "arm dominant";
 
     if (cycleDay === 3 || cycleDay === 6 || cycleDay === 7) {
       setCurrentDayPool("REST");
     } else if (cycleDay === 1 || cycleDay === 4) {
-      setCurrentDayPool(isArmType ? "daya" : "dayi");
+      setCurrentDayPool(isArmSplit ? "daya" : "dayi");
     } else if (cycleDay === 2 || cycleDay === 5) {
-      setCurrentDayPool(isArmType ? "dayaa" : "dayii");
+      setCurrentDayPool(isArmSplit ? "dayaa" : "dayii");
     }
   }, [selectedDay, profile]);
 
-  // Dynamic Volume Calculation Engine (Based directly on Setup Selection & Week progression)
-  const getProgressiveTargets = () => {
-    const week = Math.ceil(selectedDay / 7);
-    const goalStr = profile.goal.toLowerCase();
+  useEffect(() => {
+    let timerInterval = null;
+    if (timerActive && restSeconds > 0) {
+      timerInterval = setInterval(() => {
+        setRestSeconds((prev) => prev - 1);
+      }, 1000);
+    } else if (restSeconds === 0) {
+      setTimerActive(false);
+      clearInterval(timerInterval);
+    }
+    return () => clearInterval(timerInterval);
+  }, [timerActive, restSeconds]);
 
-    if (goalStr === "lean") {
-      // Lean: Higher endurance metrics
-      return { sets: 3 + Math.floor(week / 4), reps: 12 + (week - 1), label: "Endurance & Lean Volume" };
-    } else if (goalStr === "heavy") {
-      // Heavy/Strength: High mechanical resistance load profiles
-      return { sets: 4, reps: 6 - Math.floor(week / 3), label: "Power & Heavy Load" };
+  const activePoolData = MASTER_POOL[currentDayPool];
+
+  const getVolumeTargets = () => {
+    const goalStr = profile.goal.toLowerCase();
+    if (goalStr === "lean") return { sets: 3, reps: 12 };
+    if (goalStr === "heavy") return { sets: 4, reps: 6 };
+    return { sets: 3, reps: 10 };
+  };
+
+  const volumeMetrics = getVolumeTargets();
+
+  const triggerExerciseSession = (exerciseName, categoryKey) => {
+    setActiveExercise(exerciseName);
+    setActiveCategoryKey(categoryKey);
+    const trackingKey = `${currentDayPool}_${categoryKey}_${exerciseName}`;
+    const historicalSets = workoutProgress[trackingKey];
+    
+    if (historicalSets) {
+      setCompletedSets(historicalSets);
     } else {
-      // Athletic: Clean steady hypertrophy progression scales
-      return { sets: 3 + Math.floor(week / 3), reps: 10, label: "Athletic Conditioning" };
+      setCompletedSets(new Array(volumeMetrics.sets).fill(false));
+    }
+    setRestSeconds(0);
+    setTimerActive(false);
+  };
+
+  const checkOffWorkoutSet = (index) => {
+    const updatedSets = [...completedSets];
+    updatedSets[index] = !updatedSets[index];
+    setCompletedSets(updatedSets);
+
+    const trackingKey = `${currentDayPool}_${activeCategoryKey}_${activeExercise}`;
+    const newProgress = { ...workoutProgress, [trackingKey]: updatedSets };
+    setWorkoutProgress(newProgress);
+
+    if (user) {
+      setDoc(doc(db, "users", user.uid, "progress", "workout_history"), newProgress, { merge: true })
+        .catch(e => console.log("Progress cache delayed save: ", e));
+    }
+
+    if (updatedSets[index]) {
+      setRestSeconds(45);
+      setTimerActive(true);
     }
   };
 
-  const volumeMetrics = getProgressiveTargets();
+  const getCategoryCompletionStats = (category) => {
+    let totalSetsExpected = category.data.length * volumeMetrics.sets;
+    let completedSetsCount = 0;
+
+    category.data.forEach((ex) => {
+      const trackingKey = `${currentDayPool}_${category.key}_${ex.name}`;
+      const setsData = workoutProgress[trackingKey];
+      if (setsData) {
+        completedSetsCount += setsData.filter(Boolean).length;
+      }
+    });
+
+    const percentage = totalSetsExpected > 0 ? Math.round((completedSetsCount / totalSetsExpected) * 100) : 0;
+    return { percentage, done: completedSetsCount, total: totalSetsExpected };
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f97316" />
+        <ActivityIndicator size="large" color="#F97316" />
       </View>
     );
   }
 
-  const activePoolData = MASTER_POOL[currentDayPool];
+  const weekdays = ["S", "M", "T", "W", "Th", "F", "S"];
 
   return (
     <View style={styles.container}>
-      {/* HEADER SECTION */}
+      {/* APP TOP NAVIGATION HEADER */}
       <View style={styles.header}>
-        <Text style={styles.subHeader}>Workout framework</Text>
+        <Text style={styles.subHeader}>← Workout framework</Text>
         <Text style={styles.mainTitle}>Workout frequency per week</Text>
         <Text style={styles.frequencyDropdown}>5 Days per week  ∨</Text>
       </View>
 
-      {/* 1-MONTH PROGRESSIVE SCROLLABLE HORIZONTAL CALENDAR */}
-      <View style={styles.calendarWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarScroll}>
-          {Array.from({ length: 30 }).map((_, index) => {
-            const dayNum = index + 1;
-            const isSelected = dayNum === selectedDay;
-            const isRest = (dayNum % 7 === 3) || (dayNum % 7 === 6) || (dayNum % 7 === 0);
-
-            return (
-              <Pressable
-                key={dayNum}
-                onPress={() => {
-                  setSelectedDay(dayNum);
-                  setExpandedCategory(null);
-                }}
-                style={[
-                  styles.calendarDayChip,
-                  isSelected && styles.activeDayChip,
-                  isRest && !isSelected && styles.restDayChip
-                ]}
-              >
-                <Text style={[styles.dayChipNumber, isSelected && styles.activeDayChipText]}>
-                  {dayNum}
-                </Text>
-                <Text style={[styles.dayChipLabel, isSelected && styles.activeDayChipSubtext]}>
-                  {isRest ? "Rest" : "Train"}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+      <View style={styles.weekdayRowContainer}>
+        {weekdays.map((day, idx) => {
+          const isSelectedDay = ((selectedDay - 1) % 7) === idx;
+          return (
+            <Pressable
+              key={idx}
+              onPress={() => {
+                setSelectedDay(idx + 1); 
+                setExpandedCategory(null);
+              }}
+              style={[styles.weekdayCircle, isSelectedDay && styles.weekdayCircleActive]}
+            >
+              <Text style={[styles.weekdayText, isSelectedDay && styles.weekdayTextActive]}>{day}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* TRACK PROFILE TARGET STATS BAR */}
-      <View style={styles.metaBadgeBar}>
-        <Text style={styles.metaBadgeText}>
-          Goal: <Text style={{ color: "#f97316", fontWeight: "bold" }}>{profile.goal.toUpperCase()}</Text> | {volumeMetrics.label}
-        </Text>
-      </View>
-
-      {/* DETAILED EXERCISE LIST INTERACTIVE LAYOUT */}
       <ScrollView contentContainerStyle={styles.workoutContainer} showsVerticalScrollIndicator={false}>
         {currentDayPool === "REST" ? (
           <View style={styles.restDayContainer}>
             <Text style={styles.restText}>🧘‍♂️ Scheduled Rest & Recovery Day</Text>
-            <Text style={styles.restSubtext}>Muscles grow during recovery periods. Stay hydrated and track your nutrition goals!</Text>
+            <Text style={styles.restSubtext}>Lean targets rely heavily on programmatic muscular tissue remodeling windows.</Text>
           </View>
         ) : (
           activePoolData?.categories.map((category, index) => {
             const isExpanded = expandedCategory === category.key;
-            const currentSelection = customSelections[category.key] || category.data[0].name;
-            
-            // Clean sanitize lookup keys for custom images mapping
+            const stats = getCategoryCompletionStats(category);
             const cleanKey = category.label.replace(/\s+/g, "").toLowerCase();
-            const bgUri = CATEGORY_BACKGROUNDS[cleanKey] || "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop";
+            const bgUri = CATEGORY_BACKGROUNDS[cleanKey] || CATEGORY_BACKGROUNDS.upperchest;
 
             return (
               <View key={category.key} style={styles.cardWrapper}>
-                {/* Visual Connector Timeline Line down the middle */}
                 {index < activePoolData.categories.length - 1 && <View style={styles.timelineVerticalLine} />}
 
                 <Pressable
@@ -245,37 +282,48 @@ export default function ExercisePool() {
                     <View style={styles.darkOverlay} />
                     
                     <View style={styles.cardHeaderContainer}>
-                      <View>
+                      <View style={{ flex: 1 }}>
                         <Text style={styles.cardCategoryTitle}>{category.label}</Text>
-                        <Text style={styles.cardSelectedExerciseText}>{currentSelection}</Text>
-                        <Text style={styles.volumeTargetText}>
-                          {volumeMetrics.sets} Sets × {volumeMetrics.reps} Reps
+                        
+                        <View style={styles.progressTrackBackground}>
+                          <View style={[styles.progressFillActive, { width: `${stats.percentage}%` }]} />
+                        </View>
+                        <Text style={styles.progressPercentageLabel}>
+                          {stats.percentage}% Completed ({stats.percentage === 100 ? "Done" : "Last stopped here"})
                         </Text>
                       </View>
+                      
                       <Text style={styles.caretArrowText}>{isExpanded ? "▲" : "▼"}</Text>
                     </View>
                   </ImageBackground>
                 </Pressable>
 
-                {/* Sub-dropdown selection matrix matching mockup */}
                 {isExpanded && (
                   <View style={styles.dropdownOptionsContainer}>
                     {category.data.map((exercise) => {
-                      const isItemChosen = currentSelection === exercise.name;
+                      const trackingKey = `${currentDayPool}_${category.key}_${exercise.name}`;
+                      const exerciseSets = workoutProgress[trackingKey] || [];
+                      const setsFinished = exerciseSets.filter(Boolean).length;
+                      const isCompleted = setsFinished === volumeMetrics.sets;
+
                       return (
-                        <Pressable
-                          key={exercise.id}
-                          onPress={() => {
-                            setCustomSelections(prev => ({ ...prev, [category.key]: exercise.name }));
-                            setExpandedCategory(null);
-                          }}
-                          style={[styles.exerciseOptionItem, isItemChosen && styles.exerciseOptionActive]}
-                        >
-                          <Text style={[styles.exerciseOptionItemText, isItemChosen && styles.exerciseOptionActiveText]}>
-                            {exercise.name}
-                          </Text>
-                          {isItemChosen && <Text style={styles.checkIndicator}>✓</Text>}
-                        </Pressable>
+                        <View key={exercise.id} style={[styles.exerciseListItemBlock, isCompleted && styles.exerciseListItemCompleted]}>
+                          <View style={{ flex: 1, paddingRight: 12 }}>
+                            <Text style={styles.exerciseNameText}>{exercise.name}</Text>
+                            <Text style={styles.exerciseMetaDetail}>
+                              Target volume: {volumeMetrics.sets} Sets × {volumeMetrics.reps} Reps ({setsFinished}/{volumeMetrics.sets} done)
+                            </Text>
+                          </View>
+
+                          <Pressable
+                            style={[styles.startWorkoutButton, isCompleted && styles.startWorkoutButtonFinished]}
+                            onPress={() => triggerExerciseSession(exercise.name, category.key)}
+                          >
+                            <Text style={styles.startWorkoutButtonText}>
+                              {setsFinished > 0 ? (isCompleted ? "Review" : "Resume") : "Start"}
+                            </Text>
+                          </Pressable>
+                        </View>
                       );
                     })}
                   </View>
@@ -285,6 +333,56 @@ export default function ExercisePool() {
           })
         )}
       </ScrollView>
+
+      <Modal visible={activeExercise !== null} animationType="slide" transparent={false}>
+        <View style={styles.modalContainer}>
+          
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitleText}>{activeExercise}</Text>
+              <Text style={styles.modalGoalSubtext}>Goal Target: {profile.goal.toUpperCase()} Training Module</Text>
+            </View>
+            <Pressable style={styles.closeModalButton} onPress={() => setActiveExercise(null)}>
+              <Text style={styles.closeModalButtonText}>✕ Save & Exit</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.animationShowcaseContainer}>
+            <Image
+              source={{ uri: EXERCISE_ANIMATIONS[activeExercise] || EXERCISE_ANIMATIONS.default }}
+              style={styles.animatedGifAsset}
+              resizeMode="contain"
+            />
+          </View>
+
+          <View style={styles.timerDisplayContainer}>
+            {restSeconds > 0 ? (
+              <View style={styles.timerBadgeActive}>
+                <Text style={styles.timerCountdownDigits}>REST COUNTDOWN: {restSeconds}s</Text>
+              </View>
+            ) : (
+              <Text style={styles.timerStatusPlaceholderText}>Complete your set and check it off below</Text>
+            )}
+          </View>
+
+          <Text style={styles.sectionTitle}>Set Performance Matrix ({volumeMetrics.reps} Reps/Set)</Text>
+          <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingHorizontal: 24 }}>
+            {completedSets.map((isDone, index) => (
+              <Pressable
+                key={index}
+                onPress={() => checkOffWorkoutSet(index)}
+                style={[styles.setRowBlock, isDone && styles.setRowBlockDone]}
+              >
+                <Text style={[styles.setRowLabel, isDone && styles.setRowLabelDone]}>SET NUM {index + 1}</Text>
+                <View style={[styles.setCheckboxCircle, isDone && styles.setCheckboxCircleActive]}>
+                  {isDone && <Text style={styles.checkIconText}>✓</Text>}
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -292,7 +390,7 @@ export default function ExercisePool() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#13111C", // Unified matching deep premium tint
+    backgroundColor: "#13111C",
   },
   loadingContainer: {
     flex: 1,
@@ -302,12 +400,12 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    marginTop: 60,
-    marginBottom: 15,
+    marginTop: 55,
+    marginBottom: 10,
   },
   subHeader: {
     color: "#7E7A93",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     marginBottom: 4,
   },
@@ -318,80 +416,50 @@ const styles = StyleSheet.create({
   },
   frequencyDropdown: {
     color: "#7E7A93",
-    fontSize: 14,
-    marginTop: 6,
+    fontSize: 13,
+    marginTop: 4,
   },
-  calendarWrapper: {
-    marginVertical: 10,
-    paddingLeft: 20,
+  weekdayRowContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    marginVertical: 14,
   },
-  calendarScroll: {
-    paddingRight: 40,
-    gap: 12,
-  },
-  calendarDayChip: {
-    width: 55,
-    height: 65,
+  weekdayCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#1E1C2B",
-    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2D293E",
   },
-  activeDayChip: {
-    backgroundColor: "#f97316",
-    borderColor: "#f97316",
+  weekdayCircleActive: {
+    backgroundColor: "#F97316",
   },
-  restDayChip: {
-    backgroundColor: "#161520",
-    opacity: 0.6,
-  },
-  dayChipNumber: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  dayChipLabel: {
+  weekdayText: {
     color: "#7E7A93",
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "600",
   },
-  activeDayChipText: {
+  weekdayTextActive: {
     color: "#FFFFFF",
-  },
-  activeDayChipSubtext: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-  },
-  metaBadgeBar: {
-    backgroundColor: "#1E1C2B",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginHorizontal: 24,
-    borderRadius: 12,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  metaBadgeText: {
-    color: "#A29EB3",
-    fontSize: 13,
   },
   workoutContainer: {
     paddingHorizontal: 24,
-    paddingTop: 15,
-    paddingBottom: 50,
+    paddingTop: 10,
+    paddingBottom: 60,
   },
   cardWrapper: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: 18,
     alignItems: "center",
+    width: "100%",
   },
   timelineVerticalLine: {
     position: "absolute",
     width: 2,
     backgroundColor: "#2D293E",
-    top: 100,
+    top: 110,
     bottom: -30,
     zIndex: -1,
   },
@@ -408,89 +476,225 @@ const styles = StyleSheet.create({
   },
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(19, 17, 28, 0.75)",
+    backgroundColor: "rgba(19, 17, 28, 0.74)",
   },
   cardHeaderContainer: {
     flexDirection: "row",
-    justifyContent: "between",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    width: "100%",
   },
   cardCategoryTitle: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "bold",
   },
-  cardSelectedExerciseText: {
-    color: "#F97316",
-    fontSize: 14,
-    fontWeight: "500",
-    marginTop: 2,
+  progressTrackBackground: {
+    width: "80%",
+    height: 5,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 3,
+    marginTop: 8,
+    overflow: "hidden",
   },
-  volumeTargetText: {
+  progressFillActive: {
+    height: "100%",
+    backgroundColor: "#F97316",
+    borderRadius: 3,
+  },
+  progressPercentageLabel: {
     color: "#A29EB3",
     fontSize: 11,
     marginTop: 4,
+    fontWeight: "500",
   },
   caretArrowText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    position: 'absolute',
-    right: 24
   },
   dropdownOptionsContainer: {
-    width: "95%",
+    width: "94%",
     backgroundColor: "#1E1C2B",
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    padding: 10,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    padding: 14,
     marginTop: -10,
     zIndex: -2,
     borderWidth: 1,
     borderColor: "#2D293E",
+    gap: 8,
   },
-  exerciseOptionItem: {
+  exerciseListItemBlock: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 4,
+    backgroundColor: "#13111C",
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#252233",
   },
-  exerciseOptionActive: {
-    backgroundColor: "rgba(249, 115, 22, 0.1)",
+  exerciseListItemCompleted: {
+    borderColor: "rgba(249, 115, 22, 0.3)",
   },
-  exerciseOptionItemText: {
-    color: "#A29EB3",
+  exerciseNameText: {
+    color: "#FFFFFF",
     fontSize: 13,
-  },
-  exerciseOptionActiveText: {
-    color: "#F97316",
     fontWeight: "600",
   },
-  checkIndicator: {
-    color: "#F97316",
+  exerciseMetaDetail: {
+    color: "#7E7A93",
+    fontSize: 11,
+    marginTop: 2,
+  },
+  startWorkoutButton: {
+    backgroundColor: "#F97316",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  startWorkoutButtonFinished: {
+    backgroundColor: "#2D293E",
+  },
+  startWorkoutButtonText: {
+    color: "#FFFFFF",
+    fontSize: 11,
     fontWeight: "bold",
   },
   restDayContainer: {
     padding: 40,
     alignItems: "center",
-    justifyContent: "center",
   },
   restText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    textAlign: "center",
   },
   restSubtext: {
     color: "#7E7A93",
-    fontSize: 13,
+    fontSize: 12,
     textAlign: "center",
-    marginTop: 10,
-    lineHeight: 18,
+    marginTop: 8,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#13111C",
+    alignItems: "center",
+  },
+  modalHeader: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    marginTop: 50,
+    marginBottom: 15,
+  },
+  modalTitleText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  modalGoalSubtext: {
+    color: "#7E7A93",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  closeModalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#1E1C2B",
+  },
+  closeModalButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  animationShowcaseContainer: {
+    width: width - 48,
+    height: 210,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 5,
+  },
+  animatedGifAsset: {
+    width: "100%",
+    height: "100%",
+  },
+  timerDisplayContainer: {
+    marginVertical: 12,
+    height: 45,
+    justifyContent: "center",
+  },
+  timerBadgeActive: {
+    backgroundColor: "#EA580C",
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  timerCountdownDigits: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  timerStatusPlaceholderText: {
+    color: "#7E7A93",
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+  sectionTitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    alignSelf: "flex-start",
+    marginLeft: 24,
+    marginBottom: 10,
+  },
+  setRowBlock: {
+    width: "100%",
+    backgroundColor: "#1E1C2B",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#2D293E",
+  },
+  setRowBlockDone: {
+    borderColor: "#F97316",
+    backgroundColor: "rgba(249, 115, 22, 0.03)",
+  },
+  setRowLabel: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  setRowLabelDone: {
+    color: "#F97316",
+  },
+  setCheckboxCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#4E4966",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  setCheckboxCircleActive: {
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
+  },
+  checkIconText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "bold",
   },
 });
