@@ -87,7 +87,6 @@ export default function signup() {
       setLoading(false);
       console.log("Firebase Error:", error.code);
 
-      // Handle specific errors for a better UI
       if (error.code === "auth/email-already-in-use") {
         setErrors({ email: "This email is already taken." });
       } else if (error.code === "auth/invalid-email") {
@@ -179,11 +178,33 @@ export default function signup() {
         <View style={styles.circle}>
           {agreed && <View style={styles.innerDot} />}
         </View>
+        
+        {/* Important: Do NOT put an onPress on this outer Text if possible, 
+            as it can conflict with the nested ones in some RN versions */}
         <Text style={styles.terms}>
-          I agree to the <Text style={styles.link}>Terms & Conditions</Text> and{" "}
-          <Text style={styles.link}>Privacy Policy</Text>
+          I agree to the{" "}
+          <Text 
+            style={styles.link} 
+            onPress={(e) => {
+              e.stopPropagation(); // 3. Prevents the checkbox from toggling
+              router.push("/tac"); 
+            }}
+          >
+            Terms & Conditions
+          </Text>
+          {" "}and{" "}
+          <Text 
+            style={styles.link} 
+            onPress={(e) => {
+              e.stopPropagation(); 
+              router.push("/privpol");
+            }}
+          >
+            Privacy Policy
+          </Text>
         </Text>
       </Pressable>
+      
       {errors.terms && <Text style={styles.error}>{errors.terms}</Text>}
 
       <Pressable

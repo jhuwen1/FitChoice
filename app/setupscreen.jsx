@@ -261,7 +261,7 @@ export default function SetupScreen() {
               await setDoc(
                 doc(db, "users", user.uid),
                 {
-                  goal: currentModels[index].title.toLowerCase(), // lean/athletic/heavy
+                  goal: currentModels[index].title.toLowerCase(), 
                   gender: gender,
                 },
                 { merge: true }

@@ -2,18 +2,18 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    Animated,
+    Dimensions,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.9; // Card is 90% of screen width
-const SPACING = (width - CARD_WIDTH) / 2; // Centers the card
+const CARD_WIDTH = width * 0.9;
+const SPACING = (width - CARD_WIDTH) / 2;
 
 const data = [
   {
@@ -79,7 +79,6 @@ export default function Index() {
               (index + 1) * width,
             ];
 
-            // Reduced outputRange so image doesn't slide too far
             const translateX = scrollX.interpolate({
               inputRange,
               outputRange: [-40, 0, 40],
@@ -89,7 +88,6 @@ export default function Index() {
             return (
               <View style={styles.carouselItem}>
                 <View style={styles.card}>
-                  {/* Inner container to clip the moving image */}
                   <View style={styles.imageClipContainer}>
                     <Animated.View
                       style={[
@@ -114,7 +112,7 @@ export default function Index() {
             key={index}
             style={[styles.dot, activeIndex === index && styles.activeDot]}
           />
-        ))}
+        ))}+
       </View>
 
       <Text style={styles.tagline}>Your Choice, Your Growth</Text>
@@ -164,7 +162,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   listContainer: {
-    height: 480, // Constrain height for the carousel area
+    height: 480,
   },
   carouselItem: {
     width: width,
@@ -185,17 +183,17 @@ const styles = StyleSheet.create({
   imageClipContainer: {
     flex: 1,
     borderRadius: 25,
-    overflow: "hidden", // Clips the image movement
+    overflow: "hidden",
   },
   animatedImageWrapper: {
-    width: "115%", // Wider than container to allow for translateX movement
+    width: "115%",
     height: "100%",
-    left: "-7.5%", // Center the oversized wrapper
+    left: "-7.5%",
   },
   cardImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover", // Fills the box without stretching
+    resizeMode: "cover", 
   },
   cardText: {
     color: "#fff",
@@ -216,7 +214,7 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     backgroundColor: "#f97316",
-    width: 20, // Slightly wider active dot for better UX
+    width: 20,
   },
   tagline: {
     color: "#fff",

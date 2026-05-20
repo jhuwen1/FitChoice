@@ -6,7 +6,6 @@ export async function uploadFoodScan(uri) {
   const uid = auth.currentUser.uid;
   const id = Date.now().toString();
 
-  // ✅ FIX: convert uri → blob properly
   const blob = await new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.onload = () => resolve(xhr.response);
@@ -20,7 +19,6 @@ export async function uploadFoodScan(uri) {
 
   await uploadBytes(storageRef, blob);
 
-  // cleanup memory
   blob.close?.();
 
   const url = await getDownloadURL(storageRef);

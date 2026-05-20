@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons"; // Added Icons
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -104,7 +104,6 @@ export default function MacroScanner() {
           <Text style={styles.title}>Select Scan Mode</Text>
 
           <View style={styles.menu}>
-            {/* INTAKE CARD */}
             <Pressable
               style={({ pressed }) => [
                 styles.menuCard,
@@ -131,7 +130,6 @@ export default function MacroScanner() {
               </View>
             </Pressable>
 
-            {/* INFO CARD */}
             <Pressable
               style={({ pressed }) => [
                 styles.menuCard,

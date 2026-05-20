@@ -71,7 +71,6 @@ export default function Login() {
       } else if (error.code === "auth/too-many-requests") {
         Alert.alert("Locked", "Too many failed attempts. Try again later.");
       } else {
-        // This ensures you never see "undefined"
         Alert.alert("Login Error", error.message || "Something went wrong.");
       }
     }
