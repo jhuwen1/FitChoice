@@ -116,7 +116,7 @@ export default function InfoScreen() {
     return (
       <View style={styles.loadingOverlay}>
         <Text style={styles.loadingLogo}>Fit<Text style={{ color: "#f97316" }}>Choice</Text></Text>
-        <Animated.View style={runStyle}><Text style={styles.runningEmoji}>🏃‍♂️</Text></Animated.View>
+        <Animated.View style={runStyle}><Text style={styles.runningEmoji}>🏋️</Text></Animated.View>
         <ActivityIndicator size="large" color="#f97316" style={{ marginTop: 20 }} />
         <Text style={styles.loadingText}>Finalizing your profile...</Text>
       </View>
@@ -132,7 +132,7 @@ export default function InfoScreen() {
 
       {step > 1 && (
         <Pressable onPress={() => setStep(step - 1)}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>❮ Back</Text>
         </Pressable>
       )}
 

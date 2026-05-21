@@ -29,9 +29,9 @@ export default function Index() {
     if (loading) return;
 
     if (user) {
-      router.replace("/dashboard");
-    } else {
       router.replace("/introscreen");
+    } else {
+      router.replace("/dashboard");
     }
   }, [loading, user, router]); 
   return (

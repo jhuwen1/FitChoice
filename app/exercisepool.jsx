@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -18,207 +18,474 @@ import { db } from "../firebaseConfig";
 
 const { width, height } = Dimensions.get("window");
 
-const MASTER_POOL = {
-  daya: {
-    title: "Arm Dominant - Upper split",
+const WEEKLY_ROUTINE = {
+  1: {
+    type: "TRAIN",
     categories: [
-      { key: "bicepsLong", label: "Biceps Long Head", data: [{ id: "1", name: "Incline Dumbbell Curl" }, { id: "2", name: "Drag Curl" }, { id: "3", name: "Barbell Curl (Narrow Grip)" }, { id: "4", name: "Bayesian Curl (Cable)" }, { id: "5", name: "Dumbbell Alternate Biceps Curl" }, { id: "6", name: "Seated Cable Curl (Behind Body)" }, { id: "7", name: "EZ-Bar Curl (Narrow Grip)" }, { id: "8", name: "Prone Incline Incline Curl" }] },
-      { key: "bicepsShort", label: "Biceps Short Head", data: [{ id: "1", name: "Preacher Curl" }, { id: "2", name: "Spider Curl" }, { id: "3", name: "Concentration Curl" }, { id: "4", name: "High Cable Curl (Crucifix)" }, { id: "5", name: "Barbell Curl (Wide Grip)" }, { id: "6", name: "Machine Preacher Curl" }, { id: "7", name: "EZ-Bar Preacher Curl" }, { id: "8", name: "Prone Dumbbell Spider Curl" }] },
-      { key: "clavicular", label: "Clavicular (Upper Chest)", data: [{ id: "1", name: "Low-to-High Cable Fly" }, { id: "2", name: "30° Incline Dumbbell Press" }, { id: "3", name: "Incline Smith Machine Press" }, { id: "4", name: "Incline Cable Fly" }, { id: "5", name: "Incline Barbell Bench Press" }, { id: "6", name: "Incline Hammer Strength Press" }, { id: "7", name: "Reverse-Grip Bench Press" }, { id: "8", name: "Feet-Elevated Push-Up" }] },
-      { key: "brachialis", label: "Brachialis", data: [{ id: "1", name: "Dumbbell Hammer Curl" }, { id: "2", name: "Rope Cable Hammer Curl" }, { id: "3", name: "Reverse Barbell Curl" }, { id: "4", name: "Reverse EZ-Bar Curl" }, { id: "5", name: "Preacher Hammer Curl" }, { id: "6", name: "Cross-Body Hammer Curl" }, { id: "7", name: "Seated Incline Hammer Curl" }, { id: "8", name: "Reverse Cable Curl (Straight Bar)" }] },
-      { key: "tricepsLong", label: "Triceps Long Head", data: [{ id: "1", name: "Overhead Dumbbell Extension" }, { id: "2", name: "EZ-Bar Skull Crushers" }, { id: "3", name: "Incline Cable Overhead Extension" }, { id: "4", name: "DB Skull Crushers (Flat)" }, { id: "5", name: "Seated Overhead Cable Extension" }, { id: "6", name: "Barbell JM Press" }, { id: "7", name: "Dumbbell JM Press" }, { id: "8", name: "Cable Skull Crushers" }] },
-      { key: "tricepsLateral", label: "Triceps Lateral Head", data: [{ id: "1", name: "Triceps Rope Pushdown" }, { id: "2", name: "Straight Bar Pushdown" }, { id: "3", name: "Diamond Push-ups" }, { id: "4", name: "V-Bar Cable Pushdown" }, { id: "5", name: "Weighted Triceps Dips" }, { id: "6", name: "Single-Arm Cable Pushdown" }, { id: "7", name: "Machine Triceps Dip" }, { id: "8", name: "Dumbbell Triceps Kickbacks" }] },
-      { key: "sternal", label: "Sternal (Mid Chest)", data: [{ id: "1", name: "Flat Barbell Bench Press" }, { id: "2", name: "Flat Dumbbell Press" }, { id: "3", name: "Pec Deck Fly" }, { id: "4", name: "Flat Cable Fly" }, { id: "5", name: "Hammer Strength Chest Press" }, { id: "6", name: "Smith Machine Flat Bench" }, { id: "7", name: "Weighted Chest Dip (Lean Forward)" }, { id: "8", name: "Dumbbell Chest Fly" }] },
-      { key: "forearms", label: "Forearms", data: [{ id: "1", name: "Wrist Curl (Seated)" }, { id: "2", name: "Reverse Wrist Curl" }, { id: "3", name: "Plate Pinch Hold" }, { id: "4", name: "Barbell Behind-the-Back Wrist Curl" }, { id: "5", name: "Zottman Curl" }, { id: "6", name: "Wrist Roller" }, { id: "7", name: "Farmers Walk" }, { id: "8", name: "Dumbbell Suitcase Hold" }] }
+      {
+        key: "chest_day",
+        label: "Chest Dominant Split",
+        bgKey: "chest",
+        goals: {
+          lean: [
+            { id: "ch_l1", name: "Low-to-High Cable Fly" },
+            { id: "ch_l2", name: "Pec Deck Fly" },
+            { id: "ch_l3", name: "Flat Dumbbell Press (High Rep)" },
+            { id: "ch_l4", name: "Push-Ups to Failure" }
+          ],
+          heavy: [
+            { id: "ch_h1", name: "Flat Barbell Bench Press" },
+            { id: "ch_h2", name: "Incline Barbell Press" },
+            { id: "ch_h3", name: "Heavy Flat Dumbbell Press" },
+            { id: "ch_h4", name: "Weighted Chest Dips" }
+          ],
+          athletic: [
+            { id: "ch_a1", name: "30° Incline Dumbbell Press" },
+            { id: "ch_a2", name: "Flat Barbell Bench Press" },
+            { id: "ch_a3", name: "Landmine Chest Press" },
+            { id: "ch_a4", name: "Medicine Ball Chest Pass" }
+          ]
+        }
+      }
     ]
   },
-  dayaa: {
-    title: "Arm Dominant - Posterior/Lower split",
+  2: {
+    type: "TRAIN",
     categories: [
-      { key: "quads", label: "Quads", data: [{ id: "1", name: "Barbell Back Squat" }, { id: "2", name: "Leg Press" }, { id: "3", name: "Hack Squat" }, { id: "4", name: "Leg Extensions" }, { id: "5", name: "Smith Machine Squat" }, { id: "6", name: "Goblet Squat" }, { id: "7", name: "Dumbbell Bulgarian Split Squat" }, { id: "8", name: "Pendulum Squat" }] },
-      { key: "upperBack", label: "Upper Back", data: [{ id: "1", name: "Chest-supported Rows" }, { id: "2", name: "Face Pulls" }, { id: "3", name: "Wide-grip Pull-ups" }, { id: "4", name: "Wide-grip Lat Pulldowns" }, { id: "5", name: "High Cable Rows" }, { id: "6", name: "Reverse Pec Deck Flys" }, { id: "7", name: "Seal Rows" }, { id: "8", name: "Single-arm Cable Rows" }] },
-      { key: "midBack", label: "Middle Back", data: [{ id: "1", name: "Barbell Bent-Over Row" }, { id: "2", name: "Chest-Supported Row" }, { id: "3", name: "Seated Cable Row" }, { id: "4", name: "T-Bar Row" }, { id: "5", name: "One-Arm Dumbbell Row" }, { id: "6", name: "Wide-Grip Cable Row" }, { id: "7", name: "Incline Dumbbell Row" }, { id: "8", name: "Meadows Row" }] },
-      { key: "lowerBack", label: "Lower Back", data: [{ id: "1", name: "Romanian Deadlift" }, { id: "2", name: "Conventional Deadlift" }, { id: "3", name: "Good Mornings" }, { id: "4", name: "Back Extensions (Hyperextensions)" }, { id: "5", name: "Reverse Hyperextensions" }, { id: "6", name: "Rack Pulls (Below Knee)" }, { id: "7", name: "Bird Dog (Stability Exercise)" }, { id: "8", name: "Superman Holds" }] },
-      { key: "rearDelts", label: "Rear Delts", data: [{ id: "1", name: "Reverse Pec Deck Flys" }, { id: "2", name: "Bent-Over Lateral Raises" }, { id: "3", name: "Face Pulls (High Pulley)" }, { id: "4", name: "Seated Cable Rear Delt Fly" }, { id: "5", name: "Incline Dumbbell Rear Delt Row" }, { id: "6", name: "Lying DB Rear Delt Raise" }, { id: "7", name: "Single-Arm Cross-Body Cable Pull" }, { id: "8", name: "Behind-the-Back Overhead Press" }] },
-      { key: "hamstrings", label: "Hamstrings", data: [{ id: "1", name: "Lying Leg Curl" }, { id: "2", name: "Seated Leg Curl" }, { id: "3", name: "Stiff-Legged Deadlift" }, { id: "4", name: "Dumbbell Romanian Deadlift" }, { id: "5", name: "Glute-Ham Raise" }, { id: "6", name: "Single-Leg DB RDL" }, { id: "7", name: "Stability Ball Leg Curl" }, { id: "8", name: "Cable Pull-Through" }] },
-      { key: "glutes", label: "Glutes", data: [{ id: "1", name: "Barbell Hip Thrusts" }, { id: "2", name: "Bulgarian Split Squats" }, { id: "3", name: "Cable Pull-Throughs" }, { id: "4", name: "Glute Kickbacks (Cable)" }, { id: "5", name: "Barbell Glute Bridges" }, { id: "6", name: "Dumbbell Sumo Squat" }, { id: "7", name: "Deficit Reverse Lunges" }, { id: "8", name: "Machine Hip Abductions" }] },
-      { key: "calves", label: "Calves", data: [{ id: "1", name: "Standing Calf Raise" }, { id: "2", name: "Seated Calf Raise" }, { id: "3", name: "Leg Press Calf Press" }, { id: "4", name: "Smith Machine Calf Raise" }, { id: "5", name: "Single-Leg Dumbbell Calf Raise" }, { id: "6", name: "Donkey Calf Raise" }, { id: "7", name: "Bodyweight Tibialis Raise" }, { id: "8", name: "Farmer's Walk on Toes" }] }
+      {
+        key: "back_day",
+        label: "Back & Pull Split",
+        bgKey: "midback",
+        goals: {
+          lean: [
+            { id: "bk_l1", name: "Wide-Grip Lat Pulldown" },
+            { id: "bk_l2", name: "Seated Cable Row" },
+            { id: "bk_l3", name: "Straight-Arm Cable Pull-Down" },
+            { id: "bk_l4", name: "Hyperextensions" }
+          ],
+          heavy: [
+            { id: "bk_h1", name: "Barbell Bent-Over Row" },
+            { id: "bk_h2", name: "Conventional Deadlift" },
+            { id: "bk_h3", name: "Heavy T-Bar Row" },
+            { id: "bk_h4", name: "Weighted Pull-Ups" }
+          ],
+          athletic: [
+            { id: "bk_a1", name: "Wide-Grip Pull-Ups" },
+            { id: "bk_a2", name: "Single-Arm Dumbbell Row" },
+            { id: "bk_a3", name: "Chest-Supported Row" },
+            { id: "bk_a4", name: "Inverted Bodyweight Rows" }
+          ]
+        }
+      }
     ]
   },
-  dayi: {
-    title: "Chest Dominant - Upper Split",
+  3: {
+    type: "CARDIO",
+    label: "Active Recovery & Cardio",
+    bgKey: "forearms",
+    goals: {
+      lean: { targetSteps: 10000, durationMinutes: 45, dynamicLabel: "Fat Oxidation Walk", advice: "Keep a steady, conversational pace to maximize optimal fat loss." },
+      heavy: { targetSteps: 5000, durationMinutes: 20, dynamicLabel: "Joint Mobilization Recovery", advice: "Focus on systemic flushing and stretching worn out lifting tissue." },
+      athletic: { targetSteps: 8000, durationMinutes: 30, dynamicLabel: "Agility/Steady Cardio Mix", advice: "Incorporate light fast lateral footwork sets between walking spurts." }
+    }
+  },
+  4: {
+    type: "TRAIN",
     categories: [
-      { key: "clavicularHead", label: "Clavicular Head", data: [{ id: "1", name: "Low-to-High Cable Fly" }, { id: "2", name: "30° Incline Smith Machine Press" }, { id: "3", name: "Incline Cable Fly" }, { id: "4", name: "Reverse-Grip Smith Machine Bench Press" }, { id: "5", name: "30° Incline Dumbbell Press" }, { id: "6", name: "Single-Arm Incline Cable Press" }, { id: "7", name: "Guillotine Press (Low Incline)" }, { id: "8", name: "Feet-Elevated Deficit Push-Up" }] },
-      { key: "sternalHead", label: "Sternal Head", data: [{ id: "1", name: "Flat Cable Fly" }, { id: "2", name: "Pec Deck Fly" }, { id: "3", name: "Flat Dumbbell Press" }, { id: "4", name: "Smith Machine Flat Bench Press" }, { id: "5", name: "Wide-Grip Barbell Bench Press" }, { id: "6", name: "Machine Chest Press" }, { id: "7", name: "Weighted Chest Dip (Forward Lean)" }, { id: "8", name: "Flat Dumbbell Fly" }] },
-      { key: "upperBack", label: "Upper Back", data: [{ id: "1", name: "Chest-supported Row" }, { id: "2", name: "Face Pulls" }, { id: "3", name: "Wide-grip Pull-ups" }, { id: "4", name: "Wide-grip Lat Pulldowns" }, { id: "5", name: "High Cable Rows" }, { id: "6", name: "Reverse Pec Deck Flys" }, { id: "7", name: "Seal Rows" }, { id: "8", name: "Single-arm Cable Rows" }] },
-      { key: "midLowerBack", label: "Mid & Lower Back", data: [{ id: "1", name: "Barbell Bent-Over Row" }, { id: "2", name: "Romanian Deadlift" }, { id: "3", name: "Good Mornings" }, { id: "4", name: "T-Bar Row" }, { id: "5", name: "One-Arm Dumbbell Row" }, { id: "6", name: "Back Extensions" }, { id: "7", name: "Incline Dumbbell Row" }, { id: "8", name: "Seated Cable Row" }] },
-      { key: "sideDelts", label: "Side Delts", data: [{ id: "1", name: "Machine Lateral Raise" }, { id: "2", name: "Cable Lateral Raise" }, { id: "3", name: "Dumbbell Lateral Raise" }, { id: "4", name: "Smith Machine Lateral Raise" }, { id: "5", name: "Lever Lateral Raise" }, { id: "6", name: "Plate Raise" }, { id: "7", name: "Band Lateral Raise" }, { id: "8", name: "Resistance Band Pull Apart" }] },
-      { key: "biceps", label: "Biceps", data: [{ id: "1", name: "Barbell Curl" }, { id: "2", name: "EZ-Bar Curl" }, { id: "3", name: "Incline Dumbbell Curl" }, { id: "4", name: "Hammer Curl" }, { id: "5", name: "Preacher Curl" }, { id: "6", name: "Cable Curl (Straight Bar)" }, { id: "7", name: "Concentration Curl" }, { id: "8", name: "Spider Curl" }] },
-      { key: "triceps", label: "Triceps", data: [{ id: "1", name: "Tricep Rope Pushdown" }, { id: "2", name: "Overhead Rope Extension" }, { id: "3", name: "Tricep Dips" }, { id: "4", name: "Skull Crushers" }, { id: "5", name: "Close-Grip Bench Press" }, { id: "6", name: "Dumbbell Kickback" }, { id: "7", name: "EZ-Bar Skull Crusher" }, { id: "8", name: "Machine Tricep Press" }] }
+      {
+        key: "legs_day",
+        label: "Lower Body Legs Focus",
+        bgKey: "quads",
+        goals: {
+          lean: [
+            { id: "lg_l1", name: "Leg Press (High Volume)" },
+            { id: "lg_l2", name: "Goblet Squats" },
+            { id: "lg_l3", name: "Lying Leg Curl" },
+            { id: "lg_l4", name: "Seated Calf Raise" }
+          ],
+          heavy: [
+            { id: "lg_h1", name: "Barbell Back Squat" },
+            { id: "lg_h2", name: "Romanian Deadlift" },
+            { id: "lg_h3", name: "Leg Press Compilation" },
+            { id: "lg_h4", name: "Standing Calf Raise" }
+          ],
+          athletic: [
+            { id: "lg_a1", name: "Bulgarian Split Squats" },
+            { id: "lg_a2", name: "Barbell Front Squat" },
+            { id: "lg_a3", name: "Kettlebell Swings" },
+            { id: "lg_a4", name: "Box Jumps (Explosive)" }
+          ]
+        }
+      }
     ]
   },
-  dayii: {
-    title: "Chest Dominant - Lower Split",
+  5: {
+    type: "TRAIN",
     categories: [
-      { key: "quads", label: "Quads", data: [{ id: "1", name: "Barbell Back Squat" }, { id: "2", name: "Barbell Front Squat" }, { id: "3", name: "Leg Press" }, { id: "4", name: "Smith Machine Squat" }, { id: "5", name: "Hack Squat" }, { id: "6", name: "V-Squat" }, { id: "7", name: "Leg Extension" }, { id: "8", name: "Pendulum Squat" }] },
-      { key: "hamstrings", label: "Hamstrings", data: [{ id: "1", name: "Romanian Deadlift" }, { id: "2", name: "Conventional Deadlift" }, { id: "3", name: "Lying Leg Curl" }, { id: "4", name: "Seated Leg Curl" }, { id: "5", name: "Standing Leg Curl" }, { id: "6", name: "Nordic Curls" }, { id: "7", name: "Good Mornings" }, { id: "8", name: "Glute-Ham Raise" }] },
-      { key: "glutes", label: "Glutes", data: [{ id: "1", name: "Barbell Hip Thrust" }, { id: "2", name: "Smith Machine Hip Thrust" }, { id: "3", name: "Bulgarian Split Squat" }, { id: "4", name: "Pendulum Squat" }, { id: "5", name: "Leg Press (Wide Stance)" }, { id: "6", name: "Machine Leg Press (Glute Focused)" }, { id: "7", name: "Cable Pull Through" }, { id: "8", name: "Dumbbell Step-Ups" }] },
-      { key: "calves", label: "Calves", data: [{ id: "1", name: "Machine Calf Raise" }, { id: "2", name: "Seated Calf Raise" }, { id: "3", name: "Standing Calf Raise" }, { id: "4", name: "Leg Press Calf Raise" }, { id: "5", name: "Dumbbell Calf Raise" }, { id: "6", name: "Barbell Calf Raise" }, { id: "7", name: "Smith Machine Calf Raise" }, { id: "8", name: "Jump Rope" }] },
-      { key: "core", label: "Core", data: [{ id: "1", name: "Ab Wheel Rollout" }, { id: "2", name: "Cable Crunch" }, { id: "3", name: "Machine Crunch" }, { id: "4", name: "Decline Sit-ups" }, { id: "5", name: "Hanging Leg Raise" }, { id: "6", name: "Rope Cable Crunch" }, { id: "7", name: "Machine Abs" }, { id: "8", name: "Plate Weighted Sit-up" }] },
-      { key: "forearms", label: "Forearm", data: [{ id: "1", name: "Wrist Curl (Seated)" }, { id: "2", name: "Reverse Wrist Curl" }, { id: "3", name: "Hammer Curl" }, { id: "4", name: "Plate Pinch Hold" }, { id: "5", name: "Zottman Curl" }, { id: "6", name: "Farmer's Carry" }, { id: "7", name: "Reverse Curl" }, { id: "8", name: "Wrist Roller" }] }
+      {
+        key: "arms_shoulders",
+        label: "Arms & Shoulders Core",
+        bgKey: "biceps",
+        goals: {
+          lean: [
+            { id: "as_l1", name: "Dumbbell Lateral Raise" },
+            { id: "as_l2", name: "Incline Dumbbell Curl" },
+            { id: "as_l3", name: "Triceps Rope Pushdown" },
+            { id: "as_l4", name: "Cable Face Pulls" }
+          ],
+          heavy: [
+            { id: "as_h1", name: "Overhead Barbell Press" },
+            { id: "as_h2", name: "Seated Dumbbell Shoulder Press" },
+            { id: "as_h3", name: "Barbell Curl" },
+            { id: "as_h4", name: "EZ-Bar Skull Crushers" }
+          ],
+          athletic: [
+            { id: "as_a1", name: "Dumbbell Push Press" },
+            { id: "as_a2", name: "Cable Lateral Raise" },
+            { id: "as_a3", name: "Dumbbell Hammer Curl" },
+            { id: "as_a4", name: "Close-Grip Bench Press" }
+          ]
+        }
+      }
     ]
+  },
+  6: {
+    type: "TRAIN",
+    categories: 
+      {
+        key: "full_body_upper",
+        label: "Whole Body - Chest & Back Engine",
+        bgKey: "upperback",
+        goals: {
+          lean: [{ id: "fbu_l1", name: "Incline Dumbbell Fly" }, { id: "fbu_l2", name: "Lat Pulldown" }],
+          heavy: [{ id: "fbu_h1", name: "Barbell Bench Press" }, { id: "fbu_h2", name: "Bent-Over Barbell Rows" }],
+          athletic: [{ id: "fbu_a1", name: "Dumbbell Push Press" }, { id: "fbu_a2", name: "Pull-Ups" }]
+        }
+      },
+      {
+        key: "full_body_lower",
+        label: "Whole Body - Legs Focus Split",
+        bgKey: "quads",
+        goals: {
+          lean: [{ id: "fbl_l1", name: "Goblet Squats" }, { id: "fbl_l2", name: "Walking Lunges" }],
+          heavy: [{ id: "fbl_h1", name: "Barbell Back Squats" }, { id: "fbl_h2", name: "Romanian Deadlifts" }],
+          athletic: [{ id: "fbl_a1", name: "Box Jumps" }, { id: "fbl_a2", name: "Kettlebell Goblet Squats" }]
+        }
+      },
+      {
+        key: "full_body_core",
+        label: "Whole Body - Shoulders & Core Stability",
+        bgKey: "biceps",
+        goals: {
+          lean: [{ id: "fbc_l1", name: "Dumbbell Lateral Raises" }, { id: "fbc_l2", name: "Plank Hold" }],
+          heavy: [{ id: "fbc_h1", name: "Seated Dumbbell Press" }, { id: "fbc_h2", name: "Hanging Leg Raises" }],
+          athletic: [{ id: "fbc_a1", name: "Kettlebell Halos" }, { id: "fbc_a2", name: "Medicine Ball Slams" }]
+        }
+      }
+    ]
+  },
+  7: {
+    type: "CARDIO",
+    label: "Active Recovery & Cardio",
+    bgKey: "forearms",
+    goals: {
+      lean: { targetSteps: 10000, durationMinutes: 35, dynamicLabel: "Fat Burn Zone Step Routine", advice: "Sustained rhythmic walking to clear remaining system lactic acid pools." },
+      heavy: { targetSteps: 4000, durationMinutes: 15, dynamicLabel: "Muscle Flush Soft Walk", advice: "Gentle low-impact mobilization to feed recovery nutrients across heavy structural splits." },
+      athletic: { targetSteps: 6000, durationMinutes: 25, dynamicLabel: "Functional Aerobic Base Day", advice: "Steady work rate targeting oxygenating multi-joint mechanics cleanly." }
+    }
   }
 };
 
 const CATEGORY_BACKGROUNDS = {
   upperback: "https://images.unsplash.com/photo-1603287634276-ae4efe00774a?q=80&w=600&auto=format&fit=crop",
-  middleback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
   midback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
-  midlowerback: "https://images.unsplash.com/photo-1578762560072-061e4c0c443e?q=80&w=600&auto=format&fit=crop",
-  lowerback: "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=600&auto=format&fit=crop",
-  biceplonghead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
-  bicepslonghead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
-  bicepsshorthead: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
-  forearm: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop",
+  biceps: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop",
   forearms: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600&auto=format&fit=crop",
   quads: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?q=80&w=600&auto=format&fit=crop",
-  upperchest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop",
-  midchest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop"
+  chest: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop"
 };
 
 const EXERCISE_ANIMATIONS = {
-  "default": "https://fitnessprogrammer.com/wp-content/uploads/2021/05/Side-Plank-With-Dumbbell-Lateral-Raise.gif",
-  "Barbell Back Squat": "https://fitnessprogrammer.com/wp-content/uploads/2021/02/Barbell-Back-Squat.gif",
-  "Leg Press": "https://fitnessprogrammer.com/wp-content/uploads/2015/11/Leg-Press.gif",
-  "Romanian Deadlift": "https://fitnessprogrammer.com/wp-content/uploads/2021/02/Barbell-Romanian-Deadlift.gif",
-  "Flat Barbell Bench Press": "https://fitnessprogrammer.com/wp-content/uploads/2021/01/Barbell-Bench-Press.gif"
+  "default": "https://fitnessprogrammer.com/wp-content/uploads/2021/05/Side-Plank-With-Dumbbell-Lateral-Raise.gif"
+};
+
+const getWeekNumber = (d) => {
+  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const startOfYear = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - startOfYear) / 86400000) + 1) / 7);
 };
 
 export default function FitChoiceExercisePool() {
   const { user } = useAuth();
-  const router = useRouter();
+  const router = useRouter(); 
+  const countdownTimerRef = useRef(null);
+  const playTimerRef = useRef(null);
+  const restTimerRef = useRef(null);
+  const realTimeStepTrackerRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState({ goal: "lean", framework: "chest dominant" });
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [currentDayPool, setCurrentDayPool] = useState("dayi");
+  const [profile, setProfile] = useState({ goal: "athletic" });
+  
+  const currentRealWorldDayIndex = new Date().getDay();
+  const fitChoiceToday = currentRealWorldDayIndex === 0 ? 7 : currentRealWorldDayIndex;
+  
+  const [selectedDay, setSelectedDay] = useState(fitChoiceToday); 
   const [expandedCategory, setExpandedCategory] = useState(null);
+
   const [activeExercise, setActiveExercise] = useState(null);
   const [activeCategoryKey, setActiveCategoryKey] = useState(null);
-  const [workoutProgress, setWorkoutProgress] = useState({}); 
+  const [workoutProgress, setWorkoutProgress] = useState({});
   const [completedSets, setCompletedSets] = useState([]);
-  const [restSeconds, setRestSeconds] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
+
+  const [bigCountdown, setBigCountdown] = useState(null); 
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
+  const [isPlayingMode, setIsPlayingMode] = useState(false); 
+  const [secondsSpent, setSecondsSpent] = useState(0); 
+  const [restRemainingSeconds, setRestRemainingSeconds] = useState(null);
+
+  const [livePedometerSteps, setLivePedometerSteps] = useState(0);
+  const [sharedQuestData, setSharedQuestData] = useState({ steps: 0, xp: 0 });
+
+  const isTodaySelected = selectedDay === fitChoiceToday;
+  const currentDayData = WEEKLY_ROUTINE[selectedDay];
+  
+  const userGoalKey = profile.goal === "heavy" || profile.goal === "lean" ? profile.goal : "athletic";
+
+  const goalDisplayLabels = {
+    lean: "Lean Body Goal",
+    heavy: "Heavy Body Goal",
+    athletic: "Athletic Body Goal"
+  };
 
   useEffect(() => {
-    async function fetchUserMetrics() {
-      if (!user) { setLoading(false); return; }
-      try {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProfile({
-            goal: data.bodyGoal || "lean",
-            framework: data.frameworkType || "chest dominant"
-          });
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid, "activity", "today"), (document) => {
+      if (document.exists()) {
+        const d = document.data();
+        setSharedQuestData({ steps: d.steps || 0, xp: d.xp || 0 });
+        if (currentDayData.type === "CARDIO") {
+          setLivePedometerSteps(d.steps || 0);
         }
-      } catch (err) {
-        console.warn("Firestore profiles unavailable, running local state execution:", err);
+      }
+    });
+    return () => unsub();
+  }, [user, selectedDay]);
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+
+    async function initializeProgressData() {
+      try {
+        const profileRef = doc(db, "users", user.uid);
+        const profileSnap = await getDoc(profileRef);
+        
+        if (profileSnap.exists()) {
+          const userData = profileSnap.data();
+          const rawGoalValue = userData.goal || userData.bodyGoal || "athletic";
+          const savedGoal = rawGoalValue.trim().toLowerCase();
+          
+          setProfile({ goal: savedGoal });
+        } else {
+          setProfile({ goal: "athletic" });
+        }
+
+        const progressRef = doc(db, "users", user.uid, "progress", "workout_history");
+        const progressSnap = await getDoc(progressRef);
+        const currentWeekStr = `${new Date().getFullYear()}-W${getWeekNumber(new Date())}`;
+
+        if (progressSnap.exists()) {
+          const cloudData = progressSnap.data();
+          
+          if (cloudData.currentWeekMetadata !== currentWeekStr) {
+            const backupRef = doc(db, "users", user.uid, "progress", `archive_${cloudData.currentWeekMetadata || "unknown"}`);
+            await setDoc(backupRef, cloudData);
+            
+            const cleanReset = { currentWeekMetadata: currentWeekStr };
+            await setDoc(progressRef, cleanReset);
+            setWorkoutProgress(cleanReset);
+          } else {
+            setWorkoutProgress(cloudData);
+          }
+        } else {
+          const freshData = { currentWeekMetadata: currentWeekStr };
+          await setDoc(progressRef, freshData);
+          setWorkoutProgress(freshData);
+        }
+      } catch (e) {
+        console.warn("Baseline setup initialization warning:", e);
       } finally {
         setLoading(false);
       }
     }
-    fetchUserMetrics();
+
+    initializeProgressData();
   }, [user]);
 
   useEffect(() => {
-    const cycleDay = ((selectedDay - 1) % 7) + 1; 
-    const isArmSplit = profile.framework.toLowerCase() === "arm dominant";
-
-    if (cycleDay === 3 || cycleDay === 6 || cycleDay === 7) {
-      setCurrentDayPool("REST");
-    } else if (cycleDay === 1 || cycleDay === 4) {
-      setCurrentDayPool(isArmSplit ? "daya" : "dayi");
-    } else if (cycleDay === 2 || cycleDay === 5) {
-      setCurrentDayPool(isArmSplit ? "dayaa" : "dayii");
+    if (currentDayData.type === "CARDIO" && isTodaySelected && user) {
+      realTimeStepTrackerRef.current = setInterval(async () => {
+        setLivePedometerSteps((prev) => {
+          const customDelta = Math.floor(Math.random() * 4) + 2;
+          const nextSteps = prev + customDelta;
+          
+          const todayRef = doc(db, "users", user.uid, "activity", "today");
+          setDoc(todayRef, { 
+            steps: nextSteps,     nmbn
+            xp: sharedQuestData.xp 
+          }, { merge: true }).catch(err => console.log(err));
+          
+          return nextSteps;
+        });
+      }, 3000);
+    } else {
+      clearInterval(realTimeStepTrackerRef.current);
     }
-  }, [selectedDay, profile]);
-
-  useEffect(() => {
-    let timerInterval = null;
-    if (timerActive && restSeconds > 0) {
-      timerInterval = setInterval(() => {
-        setRestSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (restSeconds === 0) {
-      setTimerActive(false);
-      clearInterval(timerInterval);
-    }
-    return () => clearInterval(timerInterval);
-  }, [timerActive, restSeconds]);
-
-  const activePoolData = MASTER_POOL[currentDayPool];
+    return () => clearInterval(realTimeStepTrackerRef.current);
+  }, [selectedDay, isTodaySelected, user, sharedQuestData.xp]);
 
   const getVolumeTargets = () => {
-    const goalStr = profile.goal.toLowerCase();
-    if (goalStr === "lean") return { sets: 3, reps: 12 };
-    if (goalStr === "heavy") return { sets: 4, reps: 6 };
-    return { sets: 3, reps: 10 };
+    if (userGoalKey === "heavy") return { sets: 4, baseReps: 6, label: "Strength Progression", estSeconds: 30, minTimePerRep: 3 };
+    if (userGoalKey === "athletic") return { sets: 3, baseReps: 8, label: "Explosive Pyramids", estSeconds: 35, minTimePerRep: 2 };
+    return { sets: 3, baseReps: 12, label: "Endurance Volume Cascades", estSeconds: 45, minTimePerRep: 2 }; 
   };
-
   const volumeMetrics = getVolumeTargets();
 
-  const triggerExerciseSession = (exerciseName, categoryKey) => {
-    setActiveExercise(exerciseName);
-    setActiveCategoryKey(categoryKey);
-    const trackingKey = `${currentDayPool}_${categoryKey}_${exerciseName}`;
-    const historicalSets = workoutProgress[trackingKey];
-    
-    if (historicalSets) {
-      setCompletedSets(historicalSets);
-    } else {
-      setCompletedSets(new Array(volumeMetrics.sets).fill(false));
+  const getDynamicRepsForSet = (setIdx) => volumeMetrics.baseReps + (setIdx * 2);
+  const requiredSafetySeconds = getDynamicRepsForSet(currentSetIndex) * volumeMetrics.minTimePerRep;
+  const isCompletionGateUnlocked = secondsSpent >= requiredSafetySeconds;
+
+  const calculateDayCompletionPercentage = () => {
+    if (currentDayData.type === "CARDIO") {
+      const activeGoal = currentDayData.goals?.[userGoalKey]?.targetSteps || 5000;
+      return Math.min(Math.floor((livePedometerSteps / activeGoal) * 100), 100);
     }
-    setRestSeconds(0);
-    setTimerActive(false);
+    
+    let totalExpectedSets = 0;
+    let completedSetsCount = 0;
+    
+    currentDayData.categories.forEach((cat) => {
+      const pool = cat.goals[userGoalKey] || [];
+      pool.forEach((ex) => {
+        totalExpectedSets += volumeMetrics.sets;
+        const key = `day_${selectedDay}_${userGoalKey}_${cat.key}_${ex.name}`;
+        const history = workoutProgress[key] || [];
+        completedSetsCount += history.filter(Boolean).length;
+      });
+    });
+
+    return totalExpectedSets === 0 ? 0 : Math.min(Math.floor((completedSetsCount / totalExpectedSets) * 100), 100);
   };
 
-  const checkOffWorkoutSet = (index) => {
+  const currentDayPercentage = calculateDayCompletionPercentage();
+
+  const triggerNextSetSequenceOrClose = () => {
+    if (currentSetIndex + 1 < volumeMetrics.sets) {
+      setCurrentSetIndex((prev) => prev + 1);
+      setIsPlayingMode(false);
+      
+      setRestRemainingSeconds(45);
+      restTimerRef.current = setInterval(() => {
+        setRestRemainingSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(restTimerRef.current);
+            launchPreExerciseCountdown();
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setActiveExercise(null);
+      setIsPlayingMode(false);
+    }
+  };
+
+  const skipRestPeriodImmediately = () => {
+    clearInterval(restTimerRef.current);
+    setRestRemainingSeconds(null);
+    launchPreExerciseCountdown();
+  };
+
+  const launchPreExerciseCountdown = () => {
+    setBigCountdown(3);
+    countdownTimerRef.current = setInterval(() => {
+      setBigCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownTimerRef.current);
+          setIsPlayingMode(true);
+          startActiveWorkoutTimer();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handlePlayWorkoutSession = (exerciseName, categoryKey) => {
+    clearInterval(countdownTimerRef.current);
+    clearInterval(playTimerRef.current);
+    clearInterval(restTimerRef.current);
+    setRestRemainingSeconds(null);
+
+    setActiveExercise(exerciseName);
+    setActiveCategoryKey(categoryKey);
+
+    const trackingKey = `day_${selectedDay}_${userGoalKey}_${categoryKey}_${exerciseName}`;
+    const historicalSets = workoutProgress[trackingKey] || new Array(volumeMetrics.sets).fill(false);
+    setCompletedSets(historicalSets);
+
+    const nextUnfinishedSet = historicalSets.findIndex(done => !done);
+    const targetIdx = nextUnfinishedSet !== -1 ? nextUnfinishedSet : 0;
+    setCurrentSetIndex(targetIdx);
+
+    setIsPlayingMode(false); 
+    launchPreExerciseCountdown();
+  };
+
+  const startActiveWorkoutTimer = () => {
+    setSecondsSpent(0);
+    clearInterval(playTimerRef.current);
+    playTimerRef.current = setInterval(() => {
+      setSecondsSpent((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const finishActiveSetExecution = async () => {
+    if (!isCompletionGateUnlocked || !user) return; 
+
+    clearInterval(playTimerRef.current);
+    
     const updatedSets = [...completedSets];
-    updatedSets[index] = !updatedSets[index];
+    updatedSets[currentSetIndex] = true; 
     setCompletedSets(updatedSets);
 
-    const trackingKey = `${currentDayPool}_${activeCategoryKey}_${activeExercise}`;
+    const trackingKey = `day_${selectedDay}_${userGoalKey}_${activeCategoryKey}_${activeExercise}`;
     const newProgress = { ...workoutProgress, [trackingKey]: updatedSets };
     setWorkoutProgress(newProgress);
 
-    if (user) {
-      setDoc(doc(db, "users", user.uid, "progress", "workout_history"), newProgress, { merge: true })
-        .catch(e => console.log("Progress cache delayed save: ", e));
-    }
+    const progressRef = doc(db, "users", user.uid, "progress", "workout_history");
+    await setDoc(progressRef, newProgress, { merge: true });
 
-    if (updatedSets[index]) {
-      setRestSeconds(45);
-      setTimerActive(true);
-    }
+    const nextCalculatedXP = sharedQuestData.xp + 15;
+    const todayRef = doc(db, "users", user.uid, "activity", "today");
+    await setDoc(todayRef, { xp: nextCalculatedXP }, { merge: true });
+
+    triggerNextSetSequenceOrClose();
   };
 
-  const getCategoryCompletionStats = (category) => {
-    let totalSetsExpected = category.data.length * volumeMetrics.sets;
-    let completedSetsCount = 0;
-
-    category.data.forEach((ex) => {
-      const trackingKey = `${currentDayPool}_${category.key}_${ex.name}`;
-      const setsData = workoutProgress[trackingKey];
-      if (setsData) {
-        completedSetsCount += setsData.filter(Boolean).length;
-      }
-    });
-
-    const percentage = totalSetsExpected > 0 ? Math.round((completedSetsCount / totalSetsExpected) * 100) : 0;
-    return { percentage, done: completedSetsCount, total: totalSetsExpected };
+  const forceQuitActiveSession = () => {
+    clearInterval(countdownTimerRef.current);
+    clearInterval(playTimerRef.current);
+    clearInterval(restTimerRef.current);
+    setBigCountdown(null);
+    setRestRemainingSeconds(null);
+    setIsPlayingMode(false);
+    setActiveExercise(null);
   };
+
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const activeRestCardioData = currentDayData.goals ? currentDayData.goals[userGoalKey] : null;
 
   if (loading) {
     return (
@@ -228,71 +495,57 @@ export default function FitChoiceExercisePool() {
     );
   }
 
-  const weekdays = ["S", "M", "T", "W", "Th", "F", "S"];
-
   return (
     <View style={styles.container}>
-      {/* APP TOP NAVIGATION HEADER */}
       <View style={styles.header}>
-        <Text style={styles.subHeader}>← Workout framework</Text>
+        <Pressable onPress={() => router.push("/dashboard")}>
+          <Text style={styles.subHeader}>❮ FitChoice Framework</Text>
+        </Pressable>
         <Text style={styles.mainTitle}>Workout frequency per week</Text>
-        <Text style={styles.frequencyDropdown}>5 Days per week  ∨</Text>
+        <Text style={styles.frequencyDropdown}>
+          5 Days Active • <Text style={{ color: '#F97316' }}>{goalDisplayLabels[userGoalKey]?.toUpperCase()}</Text> ({volumeMetrics.label})
+        </Text>
       </View>
 
       <View style={styles.weekdayRowContainer}>
         {weekdays.map((day, idx) => {
-          const isSelectedDay = ((selectedDay - 1) % 7) === idx;
+          const isSelected = (selectedDay - 1) === idx;
+          const isRealDay = (fitChoiceToday - 1) === idx;
           return (
-            <Pressable
-              key={idx}
-              onPress={() => {
-                setSelectedDay(idx + 1); 
-                setExpandedCategory(null);
-              }}
-              style={[styles.weekdayCircle, isSelectedDay && styles.weekdayCircleActive]}
-            >
-              <Text style={[styles.weekdayText, isSelectedDay && styles.weekdayTextActive]}>{day}</Text>
+            <Pressable key={idx} onPress={() => setSelectedDay(idx + 1)} style={[styles.weekdayCircle, isSelected && styles.weekdayCircleActive, !isSelected && isRealDay && { borderColor: '#F97316', borderWidth: 1 }]}>
+              <Text style={[styles.weekdayText, isSelected && styles.weekdayTextActive, !isSelected && isRealDay && { color: '#F97316' }]}>{day[0]}</Text>
             </Pressable>
           );
         })}
       </View>
 
+      <View style={styles.dayProgressWrapper}>
+        <View style={styles.dayProgressHeaderRow}>
+          <Text style={styles.dayProgressLabel}>Day Progress Metrics</Text>
+          <Text style={styles.dayProgressValueText}>{currentDayPercentage}%</Text>
+        </View>
+        <View style={styles.dayProgressTrack}>
+          <View style={[styles.dayProgressBarFill, { width: `${currentDayPercentage}%` }]} />
+        </View>
+      </View>
+
       <ScrollView contentContainerStyle={styles.workoutContainer} showsVerticalScrollIndicator={false}>
-        {currentDayPool === "REST" ? (
-          <View style={styles.restDayContainer}>
-            <Text style={styles.restText}>🧘‍♂️ Scheduled Rest & Recovery Day</Text>
-            <Text style={styles.restSubtext}>Lean targets rely heavily on programmatic muscular tissue remodeling windows.</Text>
-          </View>
-        ) : (
-          activePoolData?.categories.map((category, index) => {
+        {currentDayData.type === "TRAIN" ? (
+          currentDayData.categories.map((category) => {
             const isExpanded = expandedCategory === category.key;
-            const stats = getCategoryCompletionStats(category);
-            const cleanKey = category.label.replace(/\s+/g, "").toLowerCase();
-            const bgUri = CATEGORY_BACKGROUNDS[cleanKey] || CATEGORY_BACKGROUNDS.upperchest;
+            const bgUri = CATEGORY_BACKGROUNDS[category.bgKey] || CATEGORY_BACKGROUNDS.upperback;
+            const targetExercisesPool = category.goals[userGoalKey] || [];
 
             return (
               <View key={category.key} style={styles.cardWrapper}>
-                {index < activePoolData.categories.length - 1 && <View style={styles.timelineVerticalLine} />}
-
-                <Pressable
-                  onPress={() => setExpandedCategory(isExpanded ? null : category.key)}
-                  style={styles.cardTouchTarget}
-                >
+                <Pressable onPress={() => setExpandedCategory(isExpanded ? null : category.key)} style={styles.cardTouchTarget}>
                   <ImageBackground source={{ uri: bgUri }} style={styles.imageBackground} imageStyle={{ borderRadius: 24 }}>
                     <View style={styles.darkOverlay} />
-                    
                     <View style={styles.cardHeaderContainer}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.cardCategoryTitle}>{category.label}</Text>
-                        
-                        <View style={styles.progressTrackBackground}>
-                          <View style={[styles.progressFillActive, { width: `${stats.percentage}%` }]} />
-                        </View>
-                        <Text style={styles.progressPercentageLabel}>
-                          {stats.percentage}% Completed ({stats.percentage === 100 ? "Done" : "Last stopped here"})
-                        </Text>
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={styles.cardCategoryTitle} numberOfLines={1}>{category.label}</Text>
+                        <Text style={styles.cardProgressSubtitle}>Escalating Intensity Pyramid</Text>
                       </View>
-                      
                       <Text style={styles.caretArrowText}>{isExpanded ? "▲" : "▼"}</Text>
                     </View>
                   </ImageBackground>
@@ -300,27 +553,34 @@ export default function FitChoiceExercisePool() {
 
                 {isExpanded && (
                   <View style={styles.dropdownOptionsContainer}>
-                    {category.data.map((exercise) => {
-                      const trackingKey = `${currentDayPool}_${category.key}_${exercise.name}`;
+                    {targetExercisesPool.map((exercise) => {
+                      const trackingKey = `day_${selectedDay}_${userGoalKey}_${category.key}_${exercise.name}`;
                       const exerciseSets = workoutProgress[trackingKey] || [];
                       const setsFinished = exerciseSets.filter(Boolean).length;
                       const isCompleted = setsFinished === volumeMetrics.sets;
 
                       return (
-                        <View key={exercise.id} style={[styles.exerciseListItemBlock, isCompleted && styles.exerciseListItemCompleted]}>
-                          <View style={{ flex: 1, paddingRight: 12 }}>
-                            <Text style={styles.exerciseNameText}>{exercise.name}</Text>
+                        <View key={exercise.id} style={styles.exerciseListItemBlock}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.exerciseNameText, !isTodaySelected && { color: '#4E4966' }]}>{exercise.name}</Text>
                             <Text style={styles.exerciseMetaDetail}>
-                              Target volume: {volumeMetrics.sets} Sets × {volumeMetrics.reps} Reps ({setsFinished}/{volumeMetrics.sets} done)
+                              {isTodaySelected 
+                                ? `${volumeMetrics.sets} Sets Matrix • Reps (${setsFinished}/${volumeMetrics.sets})`
+                                : "Locked — Accessible only on schedule day"}
                             </Text>
                           </View>
-
-                          <Pressable
-                            style={[styles.startWorkoutButton, isCompleted && styles.startWorkoutButtonFinished]}
-                            onPress={() => triggerExerciseSession(exercise.name, category.key)}
+                          
+                          <Pressable 
+                            style={[
+                              styles.playButtonCircle, 
+                              isCompleted && { backgroundColor: '#2D293E' },
+                              !isTodaySelected && { backgroundColor: '#1E1C2B', borderColor: '#252233', borderWidth: 1 }
+                            ]} 
+                            onPress={() => isTodaySelected && handlePlayWorkoutSession(exercise.name, category.key)}
+                            disabled={!isTodaySelected}
                           >
-                            <Text style={styles.startWorkoutButtonText}>
-                              {setsFinished > 0 ? (isCompleted ? "Review" : "Resume") : "Start"}
+                            <Text style={[styles.playButtonText, !isTodaySelected && { color: '#4E4966' }]}>
+                              {isCompleted ? "✓" : isTodaySelected ? "▶" : "X"}
                             </Text>
                           </Pressable>
                         </View>
@@ -331,56 +591,110 @@ export default function FitChoiceExercisePool() {
               </View>
             );
           })
+        ) : (
+          /* ACTIVE CARDIO SPLIT INTERACTION PANEL */
+          <View style={styles.restDayMainCardContainer}>
+            <View style={styles.restDayDecoratedSphere}><Text style={{fontSize: 32}}>🍃</Text></View>
+            <Text style={styles.restDayMainHeading}>{currentDayData.label}</Text>
+            <Text style={styles.restDaySpecificSubLabel}>{activeRestCardioData?.dynamicLabel}</Text>
+            
+            <View style={styles.restDayDividerHorizontal} />
+            
+            <View style={styles.restDayMetricRowLayout}>
+              <View style={styles.restDayMetricItemBlock}>
+                <Text style={styles.restMetricValueText}>
+                  {livePedometerSteps.toLocaleString()} / {activeRestCardioData?.targetSteps.toLocaleString()}
+                </Text>
+                <Text style={styles.restMetricLabelText}>
+                  {isTodaySelected ? "Live Tracking Steps" : "Target Steps Setup"}
+                </Text>
+              </View>
+              <View style={[styles.restDayMetricItemBlock, { borderLeftWidth: 1, borderColor: '#252233' }]}>
+                <Text style={styles.restMetricValueText}>{activeRestCardioData?.durationMinutes}m</Text>
+                <Text style={styles.restMetricLabelText}>Session Window</Text>
+              </View>
+            </View>
+
+            {isTodaySelected && (
+              <View style={styles.liveIndicatorPill}>
+                <View style={styles.greenPulseDot} />
+                <Text style={styles.liveIndicatorText}>Pedometer active on hardware layout</Text>
+              </View>
+            )}
+
+            <View style={styles.restAdviceCardHolder}>
+              <Text style={styles.restAdviceTitle}>Training Tips:</Text>
+              <Text style={styles.restAdviceParagraphText}>{activeRestCardioData?.advice}</Text>
+            </View>
+          </View>
         )}
       </ScrollView>
 
-      <Modal visible={activeExercise !== null} animationType="slide" transparent={false}>
-        <View style={styles.modalContainer}>
-          
-          <View style={styles.modalHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.modalTitleText}>{activeExercise}</Text>
-              <Text style={styles.modalGoalSubtext}>Goal Target: {profile.goal.toUpperCase()} Training Module</Text>
+      {bigCountdown !== null && (
+        <Modal transparent animationType="fade" visible={bigCountdown !== null}>
+          <View style={styles.fullscreenCountdownContainer}>
+            <View style={styles.countdownGlassCircle}>
+              <Text style={styles.countdownGiantDigit}>{bigCountdown}</Text>
+              <Text style={styles.countdownSubtextTitle}>PREPARE YOUR FORM</Text>
             </View>
-            <Pressable style={styles.closeModalButton} onPress={() => setActiveExercise(null)}>
-              <Text style={styles.closeModalButtonText}>✕ Save & Exit</Text>
+          </View>
+        </Modal>
+      )}
+
+      {restRemainingSeconds !== null && (
+        <Modal transparent animationType="slide" visible={restRemainingSeconds !== null}>
+          <View style={styles.fullscreenCountdownContainer}>
+            <View style={[styles.countdownGlassCircle, { borderColor: '#10B981', shadowColor: '#10B981' }]}>
+              <Text style={[styles.countdownGiantDigit, { color: '#10B981' }]}>{restRemainingSeconds}s</Text>
+              <Text style={styles.countdownSubtextTitle}>CATCH YOUR BREATH</Text>
+            </View>
+            <Pressable style={styles.skipRestPillButton} onPress={skipRestPeriodImmediately}>
+              <Text style={styles.skipRestText}>Skip Rest Period ⏩</Text>
             </Pressable>
           </View>
+        </Modal>
+      )}
 
-          <View style={styles.animationShowcaseContainer}>
-            <Image
-              source={{ uri: EXERCISE_ANIMATIONS[activeExercise] || EXERCISE_ANIMATIONS.default }}
-              style={styles.animatedGifAsset}
-              resizeMode="contain"
-            />
+      <Modal visible={isPlayingMode} animationType="slide" transparent={false}>
+        <View style={styles.playerWrapperContainer}>
+          <View style={styles.playerTopHeaderRow}>
+            <Pressable style={styles.quitSessionCornerButton} onPress={forceQuitActiveSession}>
+              <Text style={styles.quitText}>✕ Close</Text>
+            </Pressable>
+            <View style={styles.setTagBadgePill}>
+              <Text style={styles.setTagTextContent}>SET {currentSetIndex + 1} OF {volumeMetrics.sets}</Text>
+            </View>
+            <View style={{ width: 60 }} />
           </View>
 
-          <View style={styles.timerDisplayContainer}>
-            {restSeconds > 0 ? (
-              <View style={styles.timerBadgeActive}>
-                <Text style={styles.timerCountdownDigits}>REST COUNTDOWN: {restSeconds}s</Text>
-              </View>
-            ) : (
-              <Text style={styles.timerStatusPlaceholderText}>Complete your set and check it off below</Text>
-            )}
+          <View style={styles.exerciseIdentityTitleSection}>
+            <Text style={styles.activeExerciseTitleHeading}>{activeExercise}</Text>
+            <Text style={styles.subtextRepetitionVolumeGoal}>
+              Target: <Text style={{ color: '#F97316', fontWeight: 'bold' }}>{getDynamicRepsForSet(currentSetIndex)} Reps</Text>
+            </Text>
           </View>
 
-          <Text style={styles.sectionTitle}>Set Performance Matrix ({volumeMetrics.reps} Reps/Set)</Text>
-          <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ paddingHorizontal: 24 }}>
-            {completedSets.map((isDone, index) => (
-              <Pressable
-                key={index}
-                onPress={() => checkOffWorkoutSet(index)}
-                style={[styles.setRowBlock, isDone && styles.setRowBlockDone]}
-              >
-                <Text style={[styles.setRowLabel, isDone && styles.setRowLabelDone]}>SET NUM {index + 1}</Text>
-                <View style={[styles.setCheckboxCircle, isDone && styles.setCheckboxCircleActive]}>
-                  {isDone && <Text style={styles.checkIconText}>✓</Text>}
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <View style={styles.timerControlCenterDashboard}>
+            <Text style={styles.timerClockCountDigits}>{secondsSpent}s</Text>
+            <Text style={styles.timerPaceBenchmarkSubLabel}>Minimum movement processing window: {requiredSafetySeconds}s</Text>
+            <Text style={[styles.paceWarningIndicatorText, !isCompletionGateUnlocked && { color: '#EF4444' }]}>
+              {isCompletionGateUnlocked ? "Safe Execution Gate Complete — Unlocked" : `Complete movement path execution (${requiredSafetySeconds - secondsSpent}s left)`}
+            </Text>
+          </View>
 
+          <View style={styles.centerStageGraphicsFrameContainer}>
+            <View style={styles.embeddedAnimationCardHolderCanvas}>
+              <Image source={{ uri: EXERCISE_ANIMATIONS[activeExercise] || EXERCISE_ANIMATIONS.default }} style={styles.gameplayVisualAssetGifImage} resizeMode="contain" />
+            </View>
+          </View>
+
+          <View style={styles.footerActionDashboardZone}>
+            <Pressable style={[styles.giantSuccessVerificationButton, !isCompletionGateUnlocked && { backgroundColor: '#252233', opacity: 0.6 }]} onPress={finishActiveSetExecution} disabled={!isCompletionGateUnlocked}>
+              <Text style={styles.successActionBtnContentText}>
+                {isCompletionGateUnlocked ? `✓ FINISHED SET 0${currentSetIndex + 1} (+15 XP)` : "PERFORM REPS TO UNLOCK"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </Modal>
     </View>
@@ -405,30 +719,33 @@ const styles = StyleSheet.create({
   },
   subHeader: {
     color: "#7E7A93",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "500",
     marginBottom: 4,
   },
   mainTitle: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
+    letterSpacing: -0.5,
   },
   frequencyDropdown: {
     color: "#7E7A93",
     fontSize: 13,
-    marginTop: 4,
+    marginTop: 5,
+    fontWeight: "600",
   },
   weekdayRowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 24,
-    marginVertical: 14,
+    marginTop: 16,
+    marginBottom: 10,
   },
   weekdayCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "#1E1C2B",
     justifyContent: "center",
     alignItems: "center",
@@ -439,33 +756,57 @@ const styles = StyleSheet.create({
   weekdayText: {
     color: "#7E7A93",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "bold",
   },
   weekdayTextActive: {
     color: "#FFFFFF",
   },
+  dayProgressWrapper: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  dayProgressHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  dayProgressLabel: {
+    color: "#7E7A93",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  dayProgressValueText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  dayProgressTrack: {
+    width: "100%",
+    height: 6,
+    backgroundColor: "#1E1C2B",
+    borderRadius: 3,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#252233",
+  },
+  dayProgressBarFill: {
+    height: "100%",
+    backgroundColor: "#F97316",
+    borderRadius: 3,
+  },
   workoutContainer: {
     paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 60,
+    paddingTop: 6,
+    paddingBottom: 40,
   },
   cardWrapper: {
-    position: "relative",
-    marginBottom: 18,
-    alignItems: "center",
+    marginBottom: 14,
     width: "100%",
-  },
-  timelineVerticalLine: {
-    position: "absolute",
-    width: 2,
-    backgroundColor: "#2D293E",
-    top: 110,
-    bottom: -30,
-    zIndex: -1,
   },
   cardTouchTarget: {
     width: "100%",
-    height: 120,
+    height: 110,
     borderRadius: 24,
     overflow: "hidden",
   },
@@ -476,7 +817,7 @@ const styles = StyleSheet.create({
   },
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(19, 17, 28, 0.74)",
+    backgroundColor: "rgba(19, 17, 28, 0.72)",
   },
   cardHeaderContainer: {
     flexDirection: "row",
@@ -486,61 +827,46 @@ const styles = StyleSheet.create({
   },
   cardCategoryTitle: {
     color: "#FFFFFF",
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "bold",
   },
-  progressTrackBackground: {
-    width: "80%",
-    height: 5,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 3,
-    marginTop: 8,
-    overflow: "hidden",
-  },
-  progressFillActive: {
-    height: "100%",
-    backgroundColor: "#F97316",
-    borderRadius: 3,
-  },
-  progressPercentageLabel: {
-    color: "#A29EB3",
+  cardProgressSubtitle: {
+    color: "#7E7A93",
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 2,
     fontWeight: "500",
   },
   caretArrowText: {
-    color: "#FFFFFF",
-    fontSize: 15,
+    color: "#7E7A93",
+    fontSize: 14,
     fontWeight: "bold",
   },
   dropdownOptionsContainer: {
-    width: "94%",
+    width: "100%",
     backgroundColor: "#1E1C2B",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    padding: 14,
-    marginTop: -10,
-    zIndex: -2,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    padding: 10,
+    marginTop: -15,
+    paddingTop: 25,
+    zIndex: -1,
     borderWidth: 1,
-    borderColor: "#2D293E",
-    gap: 8,
+    borderColor: "#252233",
+    gap: 6,
   },
   exerciseListItemBlock: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#13111C",
-    padding: 12,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "#252233",
   },
-  exerciseListItemCompleted: {
-    borderColor: "rgba(249, 115, 22, 0.3)",
-  },
   exerciseNameText: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
   },
   exerciseMetaDetail: {
@@ -548,153 +874,282 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
-  startWorkoutButton: {
+  playButtonCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#F97316",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  startWorkoutButtonFinished: {
-    backgroundColor: "#2D293E",
-  },
-  startWorkoutButtonText: {
+  playButtonText: {
     color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginLeft: 1,
+  },
+  restDayMainCardContainer: {
+    backgroundColor: "#1E1C2B",
+    borderRadius: 32,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#252233",
+    marginTop: 10,
+  },
+  restDayDecoratedSphere: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "#13111C",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#252233",
+  },
+  restDayMainHeading: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  restDaySpecificSubLabel: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  restDayDividerHorizontal: {
+    width: "100%",
+    height: 1,
+    backgroundColor: "#252233",
+    marginVertical: 20,
+  },
+  restDayMetricRowLayout: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-around",
+    marginBottom: 15,
+  },
+  restDayMetricItemBlock: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  restMetricValueText: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  restMetricLabelText: {
+    color: "#7E7A93",
+    fontSize: 11,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  restAdviceCardHolder: {
+    backgroundColor: "#13111C",
+    padding: 16,
+    borderRadius: 20,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#252233",
+    marginTop: 15,
+  },
+  restAdviceTitle: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  restAdviceParagraphText: {
+    color: "#7E7A93",
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  liveIndicatorPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(16, 185, 129, 0.2)",
+    marginBottom: 5,
+  },
+  greenPulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#10B981",
+    marginRight: 8,
+  },
+  liveIndicatorText: {
+    color: "#10B981",
     fontSize: 11,
     fontWeight: "bold",
   },
-  restDayContainer: {
-    padding: 40,
+  fullscreenCountdownContainer: {
+    flex: 1,
+    backgroundColor: "rgba(19, 17, 28, 0.96)",
+    justifyContent: "center",
     alignItems: "center",
   },
-  restText: {
+  countdownGlassCircle: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(30, 28, 43, 0.6)",
+    borderWidth: 2,
+    borderColor: "#F97316",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  countdownGiantDigit: {
+    color: "#F97316",
+    fontSize: 90,
+    fontWeight: "900",
+  },
+  countdownSubtextTitle: {
+    color: "#7E7A93",
+    fontSize: 11,
+    fontWeight: "bold",
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  skipRestPillButton: {
+    marginTop: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    backgroundColor: "#1E1C2B",
+    borderWidth: 1,
+    borderColor: "#252233",
+  },
+  skipRestText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "bold",
   },
-  restSubtext: {
-    color: "#7E7A93",
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  modalContainer: {
+  playerWrapperContainer: {
     flex: 1,
     backgroundColor: "#13111C",
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 25,
   },
-  modalHeader: {
+  playerTopHeaderRow: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    marginTop: 50,
-    marginBottom: 15,
+    marginTop: 30,
   },
-  modalTitleText: {
-    color: "#FFFFFF",
-    fontSize: 20,
+  quitSessionCornerButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: "#1E1C2B",
+    borderWidth: 1,
+    borderColor: "#252233",
+  },
+  quitText: {
+    color: "#A29EB3",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  setTagBadgePill: {
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: "rgba(249, 115, 22, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(249, 115, 22, 0.25)",
+  },
+  setTagTextContent: {
+    color: "#F97316",
+    fontSize: 12,
     fontWeight: "bold",
   },
-  modalGoalSubtext: {
+  exerciseIdentityTitleSection: {
+    width: "100%",
+    paddingHorizontal: 24,
+    alignItems: "center",
+    marginTop: 15,
+  },
+  activeExerciseTitleHeading: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  subtextRepetitionVolumeGoal: {
+    color: "#7E7A93",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  timerControlCenterDashboard: {
+    width: width - 48,
+    backgroundColor: "#1E1C2B",
+    borderRadius: 24,
+    padding: 18,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#252233",
+  },
+  timerClockCountDigits: {
+    color: "#FFFFFF",
+    fontSize: 54,
+    fontWeight: "bold",
+  },
+  timerPaceBenchmarkSubLabel: {
     color: "#7E7A93",
     fontSize: 12,
     marginTop: 2,
   },
-  closeModalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: "#1E1C2B",
+  paceWarningIndicatorText: {
+    color: "#10B981",
+    fontSize: 11,
+    fontWeight: "bold",
+    marginTop: 8,
   },
-  closeModalButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  animationShowcaseContainer: {
+  centerStageGraphicsFrameContainer: {
     width: width - 48,
-    height: 210,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    overflow: "hidden",
+    height: 250,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 5,
   },
-  animatedGifAsset: {
+  embeddedAnimationCardHolderCanvas: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 32,
+    overflow: "hidden",
+  },
+  gameplayVisualAssetGifImage: {
     width: "100%",
     height: "100%",
   },
-  timerDisplayContainer: {
-    marginVertical: 12,
-    height: 45,
-    justifyContent: "center",
-  },
-  timerBadgeActive: {
-    backgroundColor: "#EA580C",
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-  },
-  timerCountdownDigits: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  timerStatusPlaceholderText: {
-    color: "#7E7A93",
-    fontSize: 13,
-    fontStyle: "italic",
-  },
-  sectionTitle: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "bold",
-    alignSelf: "flex-start",
-    marginLeft: 24,
-    marginBottom: 10,
-  },
-  setRowBlock: {
+  footerActionDashboardZone: {
     width: "100%",
-    backgroundColor: "#1E1C2B",
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    paddingHorizontal: 24,
     alignItems: "center",
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#2D293E",
+    marginBottom: 15,
   },
-  setRowBlockDone: {
-    borderColor: "#F97316",
-    backgroundColor: "rgba(249, 115, 22, 0.03)",
-  },
-  setRowLabel: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
-  },
-  setRowLabelDone: {
-    color: "#F97316",
-  },
-  setCheckboxCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#4E4966",
+  giantSuccessVerificationButton: {
+    width: "100%",
+    height: 60,
+    backgroundColor: "#F97316",
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },
-  setCheckboxCircleActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
-  },
-  checkIconText: {
+  successActionBtnContentText: {
     color: "#FFFFFF",
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: "bold",
   },
 });

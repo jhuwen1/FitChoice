@@ -57,8 +57,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     let interval = null;
-    if (isActive) { interval = setInterval(() => setSeconds(s => s + 1), 1000); } 
-    else { clearInterval(interval); }
+    if (isActive) { 
+      interval = setInterval(() => setSeconds(s => s + 1), 1000); 
+    } else { 
+      clearInterval(interval); 
+    }
     return () => clearInterval(interval);
   }, [isActive]);
 
@@ -79,7 +82,9 @@ export default function Dashboard() {
           setSteps(data.steps || 0);
           setXP(data.xp || 0);
         }
-      } catch (e) { console.error("Load Error:", e); }
+      } catch (e) { 
+        console.error("Load Error:", e); 
+      }
     };
     loadData();
   }, [user]);
@@ -118,9 +123,12 @@ export default function Dashboard() {
       
         <View>
           <ScrollView 
-            horizontal pagingEnabled showsHorizontalScrollIndicator={false}
+            horizontal 
+            pagingEnabled 
+            showsHorizontalScrollIndicator={false}
             onScroll={(e) => setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 40)))}
             scrollEventThrottle={16}
+            contentContainerStyle={styles.horizontalScrollContent}
           >
 
             <View style={[styles.card, { width: SCREEN_WIDTH - 40 }]}>
@@ -158,15 +166,12 @@ export default function Dashboard() {
         </View>
 
         <View style={styles.statsRow}>
-
             <View style={[styles.halfCard, { marginRight: 10 }]}>
                 <Text style={styles.cardHeaderTitle}>Exercise</Text>
-    
-            <View style={styles.statHeader}>
-                <Image source={navIcons.fire} style={styles.statMain} />
-                <Text style={styles.statValue}>{caloriesBurned} KCal</Text>
-            </View>
-
+                <View style={styles.statHeader}>
+                    <Image source={navIcons.fire} style={styles.statMain} />
+                    <Text style={styles.statValue}>{caloriesBurned} KCal</Text>
+                </View>
                <TouchableOpacity onPress={() => setIsActive(!isActive)} style={styles.timerContainer}>
                   <Text style={[styles.timerText, isActive && {color: '#f97316'}]}>⏱ {formatTime(seconds)}</Text>
                   <Text style={styles.ringSub}>Workout Time</Text>
@@ -194,7 +199,6 @@ export default function Dashboard() {
                 {[187, 170, 153, 136].map(v => (
                     <View key={v} style={styles.graphLineRow}><Text style={styles.graphLabel}>{v}</Text><View style={styles.graphLine} /></View>
                 ))}
-
                 <View style={[styles.weightPointer, { top: '38%', backgroundColor: '#f97316' }]} />
                 <View style={[styles.weightPointer, { top: '68%', backgroundColor: '#22c55e' }]} />
             </View>
@@ -235,13 +239,21 @@ export default function Dashboard() {
             >
               <Text style={styles.menuText}>⚙️ Settings</Text>
             </TouchableOpacity>
-
+          
             <TouchableOpacity
-              style={[styles.menuItem, {borderBottomWidth: 0}]}
-              onPress={logout}
+              style={[styles.menuItem, { borderBottomWidth: 0 }]}
+              onPress={async () => {
+                try {
+                  setShowDropdown(false);
+                  await logout();
+                  router.replace("/introscreen");
+                } catch (error) {
+                  console.error("Logout failed safely: ", error);
+                }
+              }}
             >
-              <Text style={[styles.menuText, {color: '#ef4444'}]}>
-                🚪 Logout
+              <Text style={[styles.menuText, { color: '#ef4444' }]}>
+                Logout
               </Text>
             </TouchableOpacity>
 
@@ -272,6 +284,10 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
+  horizontalScrollContent: {
+    alignItems: 'center'
+  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
