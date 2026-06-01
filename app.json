@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Fitchoice",
-    "slug": "Fitchoice",
+    "slug": "fitchoice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,16 +18,21 @@
       "permissions": [
         "android.permission.ACTIVITY_RECOGNITION",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_HEALTH"
+        "android.permission.FOREGROUND_SERVICE_HEALTH",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_HEALTH",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jhuwensorganization.fitchoice"
     },
     "web": {
       "output": "static",
@@ -48,12 +53,27 @@
           }
         }
       ],
-      "expo-barcode-scanner",
-      "expo-web-browser"
+      "expo-camera",
+      "expo-web-browser",
+      "expo-video",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f3463f06-20d4-417f-983d-7555983bb32c"
+      }
+    },
+    "owner": "jhuwens-organization",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f3463f06-20d4-417f-983d-7555983bb32c"
     }
   }
 }

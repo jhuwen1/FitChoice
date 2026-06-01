@@ -1,9 +1,5 @@
-import { Asset } from "expo-asset";
-import { GLView } from "expo-gl";
-import * as THREE from "three";
-import { GLTFLoader } from "three-stdlib";
-
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { Suspense, useRef, useState } from "react";
 import {
   ActivityIndicator,
   PanResponder,
@@ -13,10 +9,53 @@ import {
   View,
 } from "react-native";
 
-import { useRouter } from "expo-router";
+// Firebase
 import { doc, setDoc } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebaseConfig";
+
+// Modern 3D Imports + Progress Tracking
+import { useGLTF, useProgress } from "@react-three/drei/native";
+import { Canvas, useFrame } from "@react-three/fiber/native";
+
+const MODELS_DATA = {
+  male: [
+    { title: "Arm Dominant", file: require("../assets/models/male1.glb") },
+    { title: "Back Dominant", file: require("../assets/models/male2.glb") },
+    { title: "Chest Dominant", file: require("../assets/models/male3.glb") },
+  ],
+  female: [
+    { title: "Arm Dominant", file: require("../assets/models/male1.glb") },
+    { title: "Back Dominant", file: require("../assets/models/male2.glb") },
+    { title: "Chest Dominant", file: require("../assets/models/male3.glb") },
+  ],
+};
+
+// --- PRELOAD ALL MODELS ON APP LAUNCH ---
+// This forces Metro/Expo to cache the geometry and textures into RAM immediately
+MODELS_DATA.male.forEach(item => useGLTF.preload(item.file));
+MODELS_DATA.female.forEach(item => useGLTF.preload(item.file));
+
+function RenderedModel({ url, currentScale, interactionRef }) {
+  const { scene } = useGLTF(url);
+
+  useFrame(() => {
+    if (scene) {
+      if (interactionRef.current.isTouching) {
+        interactionRef.current.rotation += interactionRef.current.velocity;
+        interactionRef.current.velocity *= 0.95; 
+      } else {
+        interactionRef.current.rotation += 0.003; 
+      }
+      scene.rotation.y = interactionRef.current.rotation;
+
+      const s = 1.5 * currentScale;
+      scene.scale.set(s, s, s);
+    }
+  });
+
+  return <primitive object={scene} position={[0, -1, 0]} />;
+}
 
 export default function SetupScreen() {
   const router = useRouter();
@@ -29,40 +68,35 @@ export default function SetupScreen() {
   const [selected, setSelected] = useState(false);
   const [showHints, setShowHints] = useState(true);
 
-  const sceneRef = useRef();
-  const modelRef = useRef();
-  const modelsMap = useRef({});
+  // Hook into Three's loading engine to get real-time tracking metrics
+  const { progress, loaded, total } = useProgress();
+  const allModelsReady = progress === 100 || loaded >= total;
 
-  const velocity = useRef(0);
-  const rotation = useRef(0);
-  const scale = useRef(1);
+  const interactionRef = useRef({
+    velocity: 0,
+    rotation: 0,
+    isTouching: false
+  });
+
+  const [scaleFactor, setScaleFactor] = useState(1);
   const lastDistance = useRef(0);
-  const isTouching = useRef(false);
 
-  const models = {
-    male: [
-      { title: "Lean", file: require("../assets/models/male1.glb") },
-      { title: "Athletic", file: require("../assets/models/male2.glb") },
-      { title: "Heavy", file: require("../assets/models/male3.glb") },
-    ],
-  };
-
-  const currentModels = models[gender];
+  const currentModels = MODELS_DATA[gender];
+  const activeModelAsset = currentModels[index]?.file;
 
   const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
-      isTouching.current = true;
+      interactionRef.current.isTouching = true;
       lastDistance.current = 0;
       setShowHints(false);
     },
     onPanResponderMove: (evt, gesture) => {
       const touches = evt.nativeEvent.touches;
-
       if (touches.length === 1) {
-        velocity.current = gesture.dx * 0.002;
+        interactionRef.current.velocity = gesture.dx * 0.005;
       }
-
       if (touches.length === 2) {
         const dx = touches[0].pageX - touches[1].pageX;
         const dy = touches[0].pageY - touches[1].pageY;
@@ -70,134 +104,82 @@ export default function SetupScreen() {
 
         if (lastDistance.current) {
           let diff = distance - lastDistance.current;
-          scale.current += diff * 0.005;
-          scale.current = Math.max(0.5, Math.min(3, scale.current));
-
-          if (modelRef.current) {
-            modelRef.current.scale.set(
-              1.5 * scale.current,
-              1.5 * scale.current,
-              1.5 * scale.current,
-            );
-          }
+          setScaleFactor((prev) => Math.max(0.5, Math.min(3, prev + diff * 0.007)));
         }
         lastDistance.current = distance;
       }
     },
     onPanResponderRelease: () => {
-      isTouching.current = false;
+      interactionRef.current.isTouching = false;
       lastDistance.current = 0;
     },
+    onPanResponderTerminate: () => {
+      interactionRef.current.isTouching = false;
+      lastDistance.current = 0;
+    }
   });
 
-  const loadAllModels = async (scene) => {
-    for (let i = 0; i < currentModels.length; i++) {
-      const asset = Asset.fromModule(currentModels[i].file);
-      await asset.downloadAsync();
-
-      const loader = new GLTFLoader();
-      const model = await new Promise((resolve, reject) => {
-        loader.load(asset.uri, resolve, undefined, reject);
-      }).then((gltf) => gltf.scene);
-
-      model.position.set(0, -1, 0);
-      model.scale.set(1.5, 1.5, 1.5);
-      model.visible = i === index;
-
-      scene.add(model);
-      modelsMap.current[i] = model;
-    }
-    modelRef.current = modelsMap.current[index];
+  const handleGenderChange = (targetGender) => {
+    if (targetGender === gender) return;
+    setGender(targetGender);
+    setIndex(0);
   };
-
-  const onContextCreate = async (gl) => {
-    // Dynamically require expo-three only when the 3D context is actively mounting
-    const { Renderer } = require("expo-three");
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0f172a");
-
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      gl.drawingBufferWidth / gl.drawingBufferHeight,
-      0.1,
-      1000,
-    );
-    camera.position.z = 4;
-
-    const renderer = new Renderer({ gl });
-    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-
-    const light = new THREE.DirectionalLight(0xffffff, 1.2);
-    light.position.set(2, 5, 5);
-    scene.add(light);
-
-    await loadAllModels(scene);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-
-      if (modelRef.current) {
-        if (isTouching.current) {
-          rotation.current += velocity.current;
-          velocity.current *= 0.95;
-        } else {
-          rotation.current += 0.003;
-        }
-        modelRef.current.rotation.y = rotation.current;
-      }
-
-      renderer.render(scene, camera);
-      gl.endFrameEXP();
-    };
-
-    animate();
-    sceneRef.current = scene;
-  };
-
-  useEffect(() => {
-    if (!sceneRef.current) return;
-
-    if (modelRef.current) {
-      modelRef.current.visible = false;
-    }
-
-    const nextModel = modelsMap.current[index];
-    if (nextModel) {
-      nextModel.visible = true;
-      modelRef.current = nextModel;
-    }
-  }, [index, gender]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
-        {gender.toUpperCase()} - {currentModels[index].title}
+        {gender.toUpperCase()} - {currentModels[index]?.title || "Loading..."}
       </Text>
 
       <View style={styles.genderRow}>
         <Pressable
           style={[styles.genderBtn, gender === "male" && styles.activeBtn]}
-          onPress={() => setGender("male")}
+          onPress={() => handleGenderChange("male")}
         >
           <Text style={styles.genderText}>Male</Text>
         </Pressable>
 
         <Pressable
           style={[styles.genderBtn, gender === "female" && styles.activeBtn]}
-          onPress={() => setGender("female")}
+          onPress={() => handleGenderChange("female")}
         >
           <Text style={styles.genderText}>Female</Text>
         </Pressable>
       </View>
 
       <View style={styles.viewer} {...panResponder.panHandlers}>
-        <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />
+        <Canvas 
+          gl={{ antialias: true }} 
+          camera={{ fov: 75, position: [0, 0, 4], near: 0.1, far: 1000 }}
+          style={StyleSheet.absoluteFill}
+        >
+          <color attach="background" args={["#0f172a"]} />
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[2, 5, 5]} intensity={1.2} />
 
-        {showHints && (
-          <View style={styles.hintContainer}>
+          <Suspense fallback={null}>
+            {activeModelAsset && (
+              <RenderedModel 
+                url={activeModelAsset} 
+                currentScale={scaleFactor}
+                interactionRef={interactionRef}
+              />
+            )}
+          </Suspense>
+        </Canvas>
+
+        {/* Global Loading Overlay based on actual asset pipeline progress */}
+        {!allModelsReady && (
+          <View style={[StyleSheet.absoluteFill, styles.loaderOverlay]}>
+            <ActivityIndicator size="large" color="#f97316" />
+            <Text style={styles.loaderText}>
+              Optimizing 3D Environments ({Math.round(progress)}%)
+            </Text>
+          </View>
+        )}
+
+        {showHints && allModelsReady && (
+          <View style={styles.hintContainer} pointerEvents="none">
             <Text style={styles.hintText}>Drag to rotate</Text>
             <Text style={styles.hintText}>Pinch to zoom</Text>
           </View>
@@ -206,15 +188,15 @@ export default function SetupScreen() {
 
       <View style={styles.navContainer}>
         <Pressable
+          disabled={!allModelsReady}
           onPress={() =>
             setIndex(
-              (prev) =>
-                (prev - 1 + currentModels.length) % currentModels.length,
+              (prev) => (prev - 1 + currentModels.length) % currentModels.length,
             )
           }
         >
           {({ pressed }) => (
-            <View style={styles.chevronBtn}>
+            <View style={[styles.chevronBtn, !allModelsReady && { opacity: 0.3 }]}>
               <View
                 style={[
                   styles.chevron,
@@ -229,22 +211,23 @@ export default function SetupScreen() {
         <Pressable
           style={[
             styles.selectBtn,
-            loading && styles.selectBtnLoading,
+            (loading || !allModelsReady) && styles.selectBtnLoading,
             selected && styles.selectBtnSuccess,
           ]}
+          disabled={!allModelsReady || loading}
           onPress={async () => {
-            if (loading || selected) return;
-            if (!user) {
-              console.log("No user logged in");
-              return;
-            }
+            if (loading || selected || !user) return;
 
             setLoading(true);
             try {
+              const fullTitle = currentModels[index].title.trim().toLowerCase();
+              const splitKey = fullTitle.split(" ")[0];
+
               await setDoc(
                 doc(db, "users", user.uid),
                 {
-                  goal: currentModels[index].title.toLowerCase(),
+                  goal: fullTitle,
+                  bodyGoal: fullTitle,
                   gender: gender,
                 },
                 { merge: true }
@@ -254,7 +237,10 @@ export default function SetupScreen() {
               setSelected(true);
 
               setTimeout(() => {
-                router.push("/infoscreen");
+                router.push({
+                  pathname: "/infoscreen",
+                  params: { selectedSplit: splitKey }
+                });
               }, 800);
             } catch (err) {
               console.log("Error saving goal:", err);
@@ -272,10 +258,11 @@ export default function SetupScreen() {
         </Pressable>
 
         <Pressable
+          disabled={!allModelsReady}
           onPress={() => setIndex((prev) => (prev + 1) % currentModels.length)}
         >
           {({ pressed }) => (
-            <View style={styles.chevronBtn}>
+            <View style={[styles.chevronBtn, !allModelsReady && { opacity: 0.3 }]}>
               <View
                 style={[
                   styles.chevron,
@@ -306,6 +293,7 @@ const styles = StyleSheet.create({
   genderRow: {
     flexDirection: "row",
     marginBottom: 10,
+    zIndex: 10,
   },
   genderBtn: {
     paddingVertical: 8,
@@ -313,9 +301,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     backgroundColor: "#1e293b",
     borderRadius: 20,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
   activeBtn: {
     backgroundColor: "#f97316",
+    borderColor: "#fb923c",
   },
   genderText: {
     color: "#fff",
@@ -323,26 +314,35 @@ const styles = StyleSheet.create({
   },
   viewer: {
     width: "100%",
-    height: 400,
+    height: 420,
+    position: 'relative',
+    backgroundColor: 'transparent',
+  },
+  loaderOverlay: {
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 5
   },
   hintContainer: {
     position: "absolute",
-    bottom: 10,
+    bottom: 20,
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 10,
+    zIndex: 2,
   },
   hintText: {
     color: "#fff",
     fontSize: 12,
     textAlign: "center",
-    opacity: 0.8,
+    opacity: 0.9,
+    fontWeight: "600"
   },
   navContainer: {
-    position: "absolute",
-    bottom: 40,
+    marginTop: 20,
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
@@ -350,34 +350,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   chevronBtn: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     justifyContent: "center",
     alignItems: "center",
   },
   chevron: {
-    width: 30,
-    height: 30,
-    borderTopWidth: 6,
-    borderRightWidth: 6,
+    width: 20,
+    height: 20,
+    borderTopWidth: 5,
+    borderRightWidth: 5,
     borderColor: "#fff",
   },
   leftChevron: {
+    marginTop: 200,
     transform: [{ rotate: "-135deg" }],
   },
   rightChevron: {
+    marginTop: 200,
     transform: [{ rotate: "45deg" }],
   },
   selectBtn: {
     flex: 1,
+    marginTop: 200,
     marginHorizontal: 10,
     backgroundColor: "#f97316",
     paddingVertical: 14,
     borderRadius: 25,
     alignItems: "center",
+    justifyContent: 'center',
+    height: 54
   },
   selectBtnLoading: {
     backgroundColor: "#fb923c",
+    opacity: 0.7,
   },
   selectBtnSuccess: {
     backgroundColor: "#22c55e",

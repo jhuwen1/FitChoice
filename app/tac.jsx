@@ -8,7 +8,6 @@ export default function TermsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={22} color="#333" />
