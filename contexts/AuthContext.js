@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Added the actual logout function here
   const logout = async () => {
     try {
       await signOut(auth);
@@ -28,7 +27,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    // Added logout into the Provider's value object here
     <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>

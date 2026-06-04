@@ -327,12 +327,8 @@ export default function ArmDominantSplit() {
   const isCompletionGateUnlocked = secondsSpent >= requiredSafetySeconds; 
   const isLastSet = currentSetIndex + 1 === volumeMetrics.sets;
 
-  // FIXED: Changed ARMS_WARMUP_CATEGORIES to ARM_WARMUP_CATEGORIES
   const currentCategories = activeDay === "WARM_UP" ? ARM_WARMUP_CATEGORIES : activeDay === "MAIN" ? ARM_MAIN_CATEGORIES : ARM_LEGS_CATEGORIES; 
 
-  // ========================================== 
-  // --- REAL-TIME DATA LIFECYCLE & RESET --- 
-  // ========================================== 
   useEffect(() => { 
     const fetchCloudUserProgressData = async () => { 
       try { 
@@ -522,7 +518,6 @@ export default function ArmDominantSplit() {
 
   return ( 
     <View style={styles.container}> 
-      {/* Header */} 
       <View style={styles.header}> 
         <View style={styles.headerTopRow}> 
           <Pressable onPress={() => router.replace("/dashboard")} style={styles.backButtonContainer}> 
@@ -537,7 +532,6 @@ export default function ArmDominantSplit() {
         <Text style={styles.frequencyDropdown}>Select your preferred variations to customize your pro-grade training session.</Text> 
       </View> 
       
-      {/* Tabs Switcher Row */}
       <View style={styles.navRow}> 
         <Pressable style={[styles.navPill, activeDay === "WARM_UP" && styles.activeNavPill]} onPress={() => { setActiveDay("WARM_UP"); setExpandedCategory(null); }} > 
           <Text style={[styles.navPillText, activeDay === "WARM_UP" && styles.activeNavPillText]}>Warm Up</Text> 
@@ -550,7 +544,6 @@ export default function ArmDominantSplit() {
         </Pressable> 
       </View> 
       
-      {/* Dynamic Exercise List */} 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {currentCategories.map((cat) => { 
           const uniqueSelectionKey = `${activeDay}_${cat.key}`;
@@ -616,7 +609,6 @@ export default function ArmDominantSplit() {
           ); 
         })}
 
-        {/* Bottom Insight Panel */} 
         <View style={styles.kineticInsightCard}> 
           <View style={styles.insightHeaderRow}> 
             <Text style={styles.insightTitleText}>KINETIC INSIGHT</Text> 
@@ -626,7 +618,6 @@ export default function ArmDominantSplit() {
         </View> 
       </ScrollView> 
 
-      {/* --- TIMERS & ACTIVE WORKOUT PLAYER MODALS --- */} 
       {bigCountdown !== null && (
         <Modal transparent animationType="fade" visible={bigCountdown !== null}> 
           <View style={styles.fullscreenCountdownContainer}> 
@@ -688,71 +679,386 @@ export default function ArmDominantSplit() {
   );
 }
 
-const styles = StyleSheet.create({ 
-  container: { flex: 1, backgroundColor: "#090d16" }, 
-  header: { padding: 20, paddingTop: 50}, 
-  headerTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, 
-  backButtonContainer: {flexDirection: "row", alignItems: "center", gap: 5 }, 
-  subHeader: { color: "#ffffff", fontSize: 18}, 
-  subHeaderLabel: { color: "#94a3b8", fontSize: 14}, 
-  xpBadge: { backgroundColor: "#1e293b", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }, 
-  xpText: { color: "#f97316", fontSize: 12, fontWeight: "bold" }, 
-  mainTitle: { color: "#fff", fontSize: 26, fontWeight: "bold", marginTop: 15}, 
-  frequencyDropdown: { color: "#64748b", fontSize: 13, marginTop: 5, lineHeight: 18}, 
-  navRow: { flexDirection: "row", paddingHorizontal: 20, gap: 8, marginBottom: 15, width: "100%" }, 
-  navPill: { flex: 1, backgroundColor: "#1e293b", paddingVertical: 12, paddingHorizontal: 4, borderRadius: 20, alignItems: "center", justifyContent: "center" }, 
-  activeNavPill: { backgroundColor: "#f97316" }, 
-  navPillText: { color: "#94a3b8", fontSize: 11, fontWeight: "700", textAlign: "center" }, 
-  activeNavPillText: { color: "#fff" }, 
-  scrollContainer: { paddingHorizontal: 20, paddingBottom: 30 }, 
-  cardWrapper: { marginBottom: 15 }, 
-  cardTouchTarget: { height: 90, borderRadius: 24, overflow: "hidden" }, 
-  imageBackground: { width: "100%", height: "100%", justifyContent: "center" }, 
-  darkOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15, 23, 42, 0.6)" }, 
-  cardHeaderContainer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20 }, 
-  cardCategoryTitle: { color: "#fff", fontSize: 18, fontWeight: "bold" }, 
-  cardProgressSubtitle: { fontSize: 13, fontWeight: "600", marginTop: 2 }, 
-  tapToSelectText: { color: "rgba(255,255,255,0.4)", fontSize: 9, fontWeight: "700", marginTop: 4, letterSpacing: 0.5}, 
-  startWorkoutBtn: {backgroundColor: "#f97316", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12 }, 
-  startWorkoutBtnText: { color: "#fff", fontSize: 11, fontWeight: "bold" }, 
-  caretContainerCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.1)", alignItems: "center", justifyContent: "center" }, 
-  caretArrowText: { color: "#fff", fontSize: 10 }, 
-  blankExerciseCardBody: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#1e293b", paddingHorizontal: 20, borderRadius: 24}, 
-  blankCardTitle: { color: "#94a3b8", fontSize: 16, fontWeight: "bold" }, 
-  blankCardSubtitle: { color: "#64748b", fontSize: 11, fontWeight: "600", marginTop: 2 }, 
-  blankCaretArrowText: { color: "#64748b", fontSize: 12}, 
-  dropdownOptionsContainer: { backgroundColor: "#1e293b", borderRadius: 20, marginTop: 8, padding: 8, gap: 6}, 
-  exerciseListItemBlock: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: "transparent" }, 
-  exerciseNameText: { color: "#cbd5e1", fontSize: 14, fontWeight: "600" }, 
-  selectedIcon: { width: 18, height: 18, borderRadius: 9, backgroundColor: "#f97316", alignItems: "center", justifyContent: "center" }, 
-  selectedIconText: { color: "#fff", fontSize: 10, fontWeight: "bold" }, 
-  kineticInsightCard: { backgroundColor: "#1c2538", borderRadius: 24, padding: 20, marginTop: 10, borderWidth: 1, borderColor: "rgba(255,255,255,0.03)" }, 
-  insightHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8}, 
-  insightTitleText: { color: "#f97316", fontSize: 12, fontWeight: "bold", letterSpacing: 1 }, 
-  insightQuoteContent: { color: "#94a3b8", fontSize: 13, lineHeight: 20}, 
-  fullscreenCountdownContainer: { flex: 1, backgroundColor: "rgba(15,23,42,0.95)", alignItems: "center", justifyContent: "center" }, 
-  countdownGlassCircle: { width: 200, height: 200, borderRadius: 100, borderWidth: 4, borderColor: "#f97316", alignItems: "center", justifyContent: "center", shadowColor: "#f97316", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 15}, 
-  countdownGiantDigit: { color: "#fff", fontSize: 64, fontWeight: "900" }, 
-  countdownSubtextTitle: { color: "#64748b", fontSize: 11, fontWeight: "bold", letterSpacing: 1, marginTop: 8}, 
-  skipRestPillButton: {marginTop: 30, backgroundColor: "#10B981", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 }, 
-  skipRestText: { color: "#fff", fontWeight: "bold", fontSize: 14}, 
-  playerWrapperContainer: { flexGrow: 1, backgroundColor: "#0f172a", paddingHorizontal: 24, paddingVertical: 40 }, 
-  playerTopHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }, 
-  quitSessionCornerButton: { padding: 8}, 
-  quitText: { color: "#64748b", fontSize: 15, fontWeight: "600" }, 
-  setTagBadgePill: { backgroundColor: "#1e293b", paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 }, 
-  setTagTextContent: { color: "#00cbd6", fontSize: 11, fontWeight: "bold", letterSpacing: 0.5}, 
-  exerciseldentityTitleSection: { alignItems: "center", marginBottom: 25 }, 
-  activeExerciseTitleHeading: { color: "#fff", fontSize: 24, fontWeight: "bold", textAlign: "center" }, 
-  subtextRepetitionVolumeGoal: { color: "#94a3b8", fontSize: 14, marginTop: 6}, 
-  timerControlCenterDashboard: { backgroundColor: "#1e293b", borderRadius: 24, padding: 20, alignItems: "center", marginBottom: 25 }, 
-  timerClockCountDigits: { color: "#fff", fontSize: 48, fontWeight: "900" }, 
-  timerPaceBenchmarkSubLabel: { color: "#64748b", fontSize: 11, marginTop: 4 }, 
-  paceWarningIndicatorText: { color: "#10B981", fontSize: 11, fontWeight: "600", marginTop: 8, textAlign: "center" }, 
-  centerStageGraphicsFrameContainer: { flex: 1, justifyContent: "center", alignItems: "center", marginBottom: 25 }, 
-  embeddedAnimationCardHolderCanvas: { width: "100%", height: 200, backgroundColor: "#1c2538", borderRadius: 24, overflow: "hidden", justifyContent: "center", alignItems: "center" }, 
-  gameplayVisualAssetGifImage: { width: "90%", height: "90%" }, 
-  footerActionDashboardZone: { justifyContent: "flex-end" }, 
-  giantSuccessVerificationButton: { backgroundColor: "#f97316", width: "100%", paddingVertical: 18, borderRadius: 20, alignItems: "center", shadowColor: "#f97316", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8}, 
-  successActionBtnContentText: { color: "#fff", fontSize: 16, fontWeight: "bold", letterSpacing: 0.5} 
+const styles = StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: "#090d16" 
+  }, 
+  scrollContainer: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 30 
+  }, 
+  header: { 
+    padding: 20, 
+    paddingTop: 50
+  }, 
+  headerTopRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center" 
+  }, 
+  backButtonContainer: {
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 5 
+  }, 
+  subHeader: { 
+    color: "#ffffff", 
+    fontSize: 18
+  }, 
+  subHeaderLabel: { 
+    color: "#94a3b8", 
+    fontSize: 14
+  }, 
+  xpBadge: { 
+    backgroundColor: "#1e293b", 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 20 
+  }, 
+  xpText: { 
+    color: "#f97316", 
+    fontSize: 12, 
+    fontWeight: "bold" 
+  }, 
+  mainTitle: { 
+    color: "#fff", 
+    fontSize: 26, 
+    fontWeight: "bold", 
+    marginTop: 15
+  }, 
+  frequencyDropdown: { 
+    color: "#64748b", 
+    fontSize: 13, 
+    marginTop: 5, 
+    lineHeight: 18
+  }, 
+  navRow: { 
+    flexDirection: "row", 
+    paddingHorizontal: 20, 
+    gap: 8, 
+    marginBottom: 15, 
+    width: "100%" 
+  }, 
+  navPill: { 
+    flex: 1, 
+    backgroundColor: "#1e293b", 
+    paddingVertical: 12, 
+    paddingHorizontal: 4, 
+    borderRadius: 20, 
+    alignItems: "center", 
+    justifyContent: "center" 
+  }, 
+  activeNavPill: { 
+    backgroundColor: "#f97316" 
+  }, 
+  navPillText: { 
+    color: "#94a3b8", 
+    fontSize: 11, 
+    fontWeight: "700", 
+    textAlign: "center" 
+  }, 
+  activeNavPillText: { 
+    color: "#fff" 
+  }, 
+  cardWrapper: { 
+    marginBottom: 15 
+  }, 
+  cardTouchTarget: { 
+    height: 90, 
+    borderRadius: 24, 
+    overflow: "hidden" 
+  }, 
+  imageBackground: { 
+    width: "100%", 
+    height: "100%", 
+    justifyContent: "center" 
+  }, 
+  darkOverlay: { 
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: "rgba(15, 23, 42, 0.6)" 
+  }, 
+  cardHeaderContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    paddingHorizontal: 20 
+  }, 
+  cardCategoryTitle: { 
+    color: "#fff", 
+    fontSize: 18, 
+    fontWeight: "bold" 
+  }, 
+  cardProgressSubtitle: { 
+    fontSize: 13, 
+    fontWeight: "600", 
+    marginTop: 2 
+  }, 
+  tapToSelectText: { 
+    color: "rgba(255,255,255,0.4)", 
+    fontSize: 9, 
+    fontWeight: "700", 
+    marginTop: 4, 
+    letterSpacing: 0.5
+  }, 
+  startWorkoutBtn: {
+    backgroundColor: "#f97316", 
+    paddingHorizontal: 14, 
+    paddingVertical: 8, 
+    borderRadius: 12 
+  }, 
+  startWorkoutBtnText: { 
+    color: "#fff", 
+    fontSize: 11, 
+    fontWeight: "bold" 
+  }, 
+  caretContainerCircle: { 
+    width: 30, 
+    height: 30, 
+    borderRadius: 15, 
+    backgroundColor: "rgba(255,255,255,0.1)", 
+    alignItems: "center", 
+    justifyContent: "center" 
+  }, 
+  caretArrowText: { 
+    color: "#fff", 
+    fontSize: 10 
+  }, 
+  blankExerciseCardBody: { 
+    flex: 1, 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    backgroundColor: "#1e293b", 
+    paddingHorizontal: 20, 
+    borderRadius: 24
+  }, 
+  blankCardTitle: { 
+    color: "#94a3b8", 
+    fontSize: 16, 
+    fontWeight: "bold" 
+  }, 
+  blankCardSubtitle: { 
+    color: "#64748b", 
+    fontSize: 11, 
+    fontWeight: "600", 
+    marginTop: 2 
+  }, 
+  blankCaretArrowText: { 
+    color: "#64748b", 
+    fontSize: 12
+  }, 
+  dropdownOptionsContainer: { 
+    backgroundColor: "#1e293b", 
+    borderRadius: 20, 
+    marginTop: 8, 
+    padding: 8, 
+    gap: 6
+  }, 
+  exerciseListItemBlock: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    justifyContent: "space-between", 
+    paddingHorizontal: 16, 
+    paddingVertical: 12, 
+    borderRadius: 14, 
+    borderWidth: 1, 
+    borderColor: "transparent" 
+  }, 
+  exerciseNameText: { 
+    color: "#cbd5e1", 
+    fontSize: 14, 
+    fontWeight: "600" 
+  }, 
+  selectedIcon: { 
+    width: 18, 
+    height: 18, 
+    borderRadius: 9, 
+    backgroundColor: "#f97316", 
+    alignItems: "center", 
+    justifyContent: "center" 
+  }, 
+  selectedIconText: { 
+    color: "#fff", 
+    fontSize: 10, 
+    fontWeight: "bold" 
+  }, 
+  kineticInsightCard: { 
+    backgroundColor: "#1c2538", 
+    borderRadius: 24, 
+    padding: 20, 
+    marginTop: 10, 
+    borderWidth: 1, 
+    borderColor: "rgba(255,255,255,0.03)" 
+  }, 
+  insightHeaderRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 8
+  }, 
+  insightTitleText: { 
+    color: "#f97316", 
+    fontSize: 12, 
+    fontWeight: "bold", 
+    letterSpacing: 1 
+  }, 
+  insightQuoteContent: { 
+    color: "#94a3b8", 
+    fontSize: 13, 
+    lineHeight: 20
+  }, 
+  playerWrapperContainer: { 
+    flexGrow: 1, 
+    backgroundColor: "#0f172a", 
+    paddingHorizontal: 24, 
+    paddingVertical: 40 
+  }, 
+  playerTopHeaderRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 20 
+  }, 
+  quitSessionCornerButton: { 
+    padding: 8
+  }, 
+  quitText: { 
+    color: "#64748b", 
+    fontSize: 15, 
+    fontWeight: "600" 
+  }, 
+  setTagBadgePill: { 
+    backgroundColor: "#1e293b", 
+    paddingHorizontal: 14, 
+    paddingVertical: 6, 
+    borderRadius: 12 
+  }, 
+  setTagTextContent: { 
+    color: "#00cbd6", 
+    fontSize: 11, 
+    fontWeight: "bold", 
+    letterSpacing: 0.5
+  }, 
+  exerciseldentityTitleSection: { 
+    alignItems: "center", 
+    marginBottom: 25 
+  }, 
+  activeExerciseTitleHeading: { 
+    color: "#fff", 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    textAlign: "center" 
+  }, 
+  subtextRepetitionVolumeGoal: { 
+    color: "#94a3b8", 
+    fontSize: 14, 
+    marginTop: 6
+  }, 
+  timerControlCenterDashboard: { 
+    backgroundColor: "#1e293b", 
+    borderRadius: 24, 
+    padding: 20, 
+    alignItems: "center", 
+    marginBottom: 25 
+  }, 
+  timerClockCountDigits: { 
+    color: "#fff", 
+    fontSize: 48, 
+    fontWeight: "900" 
+  }, 
+  timerPaceBenchmarkSubLabel: { 
+    color: "#64748b", 
+    fontSize: 11, 
+    marginTop: 4 
+  }, 
+  paceWarningIndicatorText: { 
+    color: "#10B981", 
+    fontSize: 11, 
+    fontWeight: "600", 
+    marginTop: 8, 
+    textAlign: "center" 
+  }, 
+  centerStageGraphicsFrameContainer: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginBottom: 25 
+  }, 
+  embeddedAnimationCardHolderCanvas: { 
+    width: "100%", 
+    height: 200, 
+    backgroundColor: "#1c2538", 
+    borderRadius: 24, 
+    overflow: "hidden", 
+    justifyContent: "center", 
+    alignItems: "center" 
+  }, 
+  gameplayVisualAssetGifImage: { 
+    width: "90%", 
+    height: "90%" 
+  }, 
+  footerActionDashboardZone: { 
+    justifyContent: "flex-end" 
+  }, 
+  giantSuccessVerificationButton: { 
+    backgroundColor: "#f97316", 
+    width: "100%", 
+    paddingVertical: 18, 
+    borderRadius: 20, 
+    alignItems: "center", 
+    shadowColor: "#f97316", 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 8
+  }, 
+  successActionBtnContentText: { 
+    color: "#fff", 
+    fontSize: 16, 
+    fontWeight: "bold", 
+    letterSpacing: 0.5
+  },
+  fullscreenCountdownContainer: { 
+    flex: 1, 
+    backgroundColor: "rgba(15,23,42,0.95)", 
+    alignItems: "center", 
+    justifyContent: "center" 
+  }, 
+  countdownGlassCircle: { 
+    width: 200, 
+    height: 200, 
+    borderRadius: 100, 
+    borderWidth: 4, 
+    borderColor: "#f97316", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    shadowColor: "#f97316", 
+    shadowOffset: { width: 0, height: 0 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 15
+  }, 
+  countdownGiantDigit: { 
+    color: "#fff", 
+    fontSize: 64, 
+    fontWeight: "900" 
+  }, 
+  countdownSubtextTitle: { 
+    color: "#64748b", 
+    fontSize: 11, 
+    fontWeight: "bold", 
+    letterSpacing: 1, 
+    marginTop: 8
+  }, 
+  skipRestPillButton: {
+    marginTop: 30, 
+    backgroundColor: "#10B981", 
+    paddingHorizontal: 24, 
+    paddingVertical: 12, 
+    borderRadius: 24 
+  }, 
+  skipRestText: { 
+    color: "#fff", 
+    fontWeight: "bold", 
+    fontSize: 14
+  }
 });

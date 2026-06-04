@@ -234,9 +234,6 @@ export default function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ==========================================
-  // Global Containers & Modals
-  // ==========================================
   container: { 
     flex: 1, 
     backgroundColor: '#0e0a08', 
@@ -337,10 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     letterSpacing: 0.5 
   },
-
-  // ==========================================
-  // Header Elements
-  // ==========================================
   headerRow: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -388,10 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: '700', 
     fontSize: 13 
   },
-
-  // ==========================================
-  // Flash Sale Section
-  // ==========================================
   flashSaleCard: { 
     position: 'relative', 
     marginBottom: 20, 
@@ -488,10 +477,6 @@ const styles = StyleSheet.create({
     fontWeight: '800', 
     fontSize: 14 
   },
-
-  // ==========================================
-  // Items Grid & Standard Cards
-  // ==========================================
   itemsGrid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
@@ -580,10 +565,6 @@ const styles = StyleSheet.create({
   buttonCoinEmoji: { 
     fontSize: 12 
   },
-
-  // ==========================================
-  // Legendary Card Section
-  // ==========================================
   legendaryCard: { 
     position: 'relative', 
     marginTop: 10, 

@@ -53,23 +53,21 @@ export default function Dashboard() {
 const animationProgress = useSharedValue(0);
 
   useEffect(() => {
-    // Loop the wave animation fluidly back and forth to create the color shift wave
     animationProgress.value = withRepeat(
       withTiming(1, { duration: 3000 }),
-      -1,   // Infinite loops
-      true  // Reverse direction seamlessly to maintain the continuous wave look
+      -1,  
+      true  
     );
   }, []);
 
   const animatedGradientStyle = useAnimatedStyle(() => {
-    // Dynamically shift the coordinates to alter the gradient angle on the fly
     const tx = interpolate(animationProgress.value, [0, 1], [-15, 15]);
     const ty = interpolate(animationProgress.value, [0, 1], [-10, 10]);
     return {
       transform: [
         { translateX: tx },
         { translateY: ty },
-        { scale: 1.4 } // Upscale slightly to prevent edge clipping during runtime movement
+        { scale: 1.4 }
       ],
     };
   });
@@ -82,7 +80,6 @@ const animationProgress = useSharedValue(0);
   const [dailyXpEarned, setDailyXpEarned] = useState(0);
   const [exercisesFinishedToday, setExercisesFinishedToday] = useState(0);
 
-  // USER PROFILE STATE FOR DYNAMIC MACRO CALCULATIONS
   const [userProfile, setUserProfile] = useState({ 
     currentWeight: 0, 
     goalWeight: 0,
@@ -131,11 +128,6 @@ const animationProgress = useSharedValue(0);
   
   const previousLevelRef = useRef(null);
 
-  // =========================================================================
-  // DYNAMIC CALORIE & NUTRITION FORMULA ENGINE (GOAL-DRIVEN DETECTOR)
-  // =========================================================================
-
-  // A. Parse feet-and-inches string layout (e.g., "5'11") dynamically into centimeters (cm)
   const parseHeightToCm = (heightStr) => {
     if (!heightStr) return 170;
     if (typeof heightStr === 'number' || !isNaN(heightStr)) {
@@ -156,7 +148,6 @@ const animationProgress = useSharedValue(0);
     return 170; 
   };
 
-  // B. Convert pounds to kilograms automatically if standard unit weights match "lbs"
   const rawWeightValue = userProfile.currentWeight || 0;
   const weightInKg = userProfile.weightUnit?.toLowerCase() === "lbs" 
     ? rawWeightValue * 0.45359237 
@@ -166,44 +157,35 @@ const animationProgress = useSharedValue(0);
   const userAge = userProfile.age || 20;
   const userGender = userProfile.gender || "Male";
 
-  // C. Execute BMR Equations based on profile metrics
   const calculatedBMR = userGender.toLowerCase() === "female"
     ? (10 * weightInKg) + (6.25 * heightInCm) - (5 * userAge) - 161
     : (10 * weightInKg) + (6.25 * heightInCm) - (5 * userAge) + 5;
 
-  // D. Base TDEE Calculation using an active baseline metabolic modifier of 1.25
   const baseTDEE = Math.floor(calculatedBMR * 1.25);
 
-  // E. Dynamic Goal Detection & Calorie Offset Modifier
   let calorieGoalAdjustment = 0;
   let detectedGoalString = "Maintenance";
 
   if (userProfile.goalWeight > 0 && userProfile.currentWeight > 0) {
     if (userProfile.goalWeight < userProfile.currentWeight) {
-      // Goal weight is less than current weight -> Fat Loss Deficit (-500 kcal)
       calorieGoalAdjustment = -500;
       detectedGoalString = "Fat Loss";
     } else if (userProfile.goalWeight > userProfile.currentWeight) {
-      // Goal weight is greater than current weight -> Muscle Gain Surplus (+300 kcal)
       calorieGoalAdjustment = 300;
       detectedGoalString = "Muscle Gain";
     }
   }
 
-  // Final Calorie Goal applying the modifier (with a hard 1200 kcal health safety floor)
   const calorieGoal = Math.max(1200, baseTDEE + calorieGoalAdjustment);
 
-  // F. Derive required macros according to calculations 
   const proteinGoal = Math.floor(weightInKg * 2);
   const fatGoal = Math.floor((calorieGoal * 0.25) / 9);
   const carbsGoal = Math.floor((calorieGoal - (proteinGoal * 4) - (fatGoal * 9)) / 4);
 
-  // G. User Performance State Trackers
   const stepGoal = 5000;
   const stepCaloriesBurned = Math.floor(steps * 0.04);
   const totalCaloriesBurned = stepCaloriesBurned + exerciseBurnedCalories;
 
-  // =========================================================================
 
   const level = Math.floor(xp / 100) + 1;
   const xpProgress = (xp % 100);
@@ -341,7 +323,7 @@ const animationProgress = useSharedValue(0);
     const labels = [];
     for (let i = 3; i >= 0; i--) {
       const targetDate = new Date();
-      targetDate.setDate(targetDate.getDate() - (i * 7)); // Intervals of 7 days back
+      targetDate.setDate(targetDate.getDate() - (i * 7)); 
       const month = String(targetDate.getMonth() + 1).padStart(2, '0');
       const day = String(targetDate.getDate()).padStart(2, '0');
       labels.push(`${month}/${day}`);
@@ -363,7 +345,6 @@ const animationProgress = useSharedValue(0);
     return () => clearInterval(clockInterval);
   }, [todayStr]);
 
-  // PROFILE LISTENER STREAM FOR LIVE METRIC CALCULATIONS
   useEffect(() => {
     if (!user) return;
     const unsubProfile = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
@@ -654,7 +635,6 @@ const animationProgress = useSharedValue(0);
       <Image source={require("../assets/background.gif")} style={styles.globalScreenAbsoluteGif} resizeMode="cover" />
     )}
 
-    {/* ================= REWARD / LEVEL UP MODAL ================= */}
     <Modal visible={showLevelUpModal} transparent animationType="fade">
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' }}>
         <View style={{ backgroundColor: '#1e293b', padding: 25, borderRadius: 24, width: 320, alignItems: 'center', borderWidth: 2, borderColor: '#f97316' }}>
@@ -690,7 +670,6 @@ const animationProgress = useSharedValue(0);
     ]} />
 
     <View style={styles.topHeader}>
-      {/* Shop Coin Button */}
       <TouchableOpacity 
         onPress={() => router.push("/shop")}
         style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDarkMode ? '#1e293b' : '#e2e8f0', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 }}
@@ -721,7 +700,6 @@ const animationProgress = useSharedValue(0);
             scrollEventThrottle={16}
             contentContainerStyle={styles.horizontalScrollContent}
           >
-            {/* Card 1: Calories */}
             <View style={[styles.card, { width: CARD_WIDTH, marginRight: 20 }, !isDarkMode && { backgroundColor: '#fff' }]}>
               <View style={styles.rowBetween}>
                 <Text style={[styles.cardHeaderTitle, { marginBottom: 2 }, !isDarkMode && { color: '#1e293b' }]}>Calorie Balance</Text>
@@ -759,7 +737,6 @@ const animationProgress = useSharedValue(0);
               </View>
             </View>
 
-            {/* Card 2: RPG Leveling Systems */}
             <View style={[styles.card, { width: CARD_WIDTH, alignItems: 'center' }, !isDarkMode && { backgroundColor: '#fff' }]}>
               <Text style={[styles.cardHeaderTitle, !isDarkMode && { color: '#1e293b' }]}>Character Experience System</Text>
               <AnimatedCircularProgress size={120} width={12} fill={xpProgress} tintColor="#f97316" backgroundColor={isDarkMode ? "#2d3748" : "#e2e8f0"} rotation={0}>
@@ -779,11 +756,9 @@ const animationProgress = useSharedValue(0);
           </View>
         </View>
 
-        {/* ================= REWARDS & TROPHIES SECTION ================= */}
         <View style={styles.paddedContentWrapper}>
           <View style={[styles.card, !isDarkMode && { backgroundColor: '#fff' }]}>
             
-            {/* Header Segment */}
             <View style={styles.rowBetween}>
               <View>
                 <Text style={[styles.cardHeaderTitle, { marginBottom: 2 }, !isDarkMode && { color: '#1e293b' }]}>
@@ -799,10 +774,8 @@ const animationProgress = useSharedValue(0);
               </View>
             </View>
             
-            {/* Horizontal Achievement Nodes */}
             <View style={styles.trophyRowContainer}>
               
-              {/* Trophy 1: Steps */}
               <View style={styles.trophyNodeItem}>
                 <View style={[styles.trophyIconOuterCircle, steps >= stepGoal && styles.trophyCircleUnlocked]}>
                   <Text style={{ fontSize: 20 }}>🏃</Text>
@@ -813,12 +786,9 @@ const animationProgress = useSharedValue(0);
                 </Text>
               </View>
 
-              {/* Trophy 2: Level Threshold */}
               <View style={styles.trophyNodeItem}>
-                {/* Glowing/Highlighted central element styled with dynamic shift wrapper coordinates */}
                 <View style={[styles.trophyIconOuterCircle, styles.trophyCenterBrightCircle, level >= 2 && styles.trophyCircleUnlocked, { overflow: 'hidden', position: 'relative' }]}>
                   
-                  {/* Integrated Wave Mesh Layer using animatedGradientStyle from dual-axis configuration */}
                   {level >= 2 && (
                     <Animated.View 
                       style={[
@@ -844,7 +814,6 @@ const animationProgress = useSharedValue(0);
                 </Text>
               </View>
 
-              {/* Trophy 3: Nutritional Control */}
               <View style={styles.trophyNodeItem}>
                 <View style={[styles.trophyIconOuterCircle, (nutritionIntakes.calories <= calorieGoal && nutritionIntakes.calories > 0) && styles.trophyCircleUnlocked]}>
                   <Text style={{ fontSize: 20 }}>🥦</Text>
@@ -856,10 +825,8 @@ const animationProgress = useSharedValue(0);
               </View>
             </View>
 
-            {/* Rank Progress Bar Indicator */}
             <View style={styles.rankProgressWrapper}>
               <View style={styles.rankProgressBarTrack}>
-                {/* Solid fallback color representing the dual orange/purple transition line split */}
                 <View style={[styles.rankProgressBarFill, { width: '65%' }]} />
               </View>
               <Text style={styles.rankProgressPercentageLabel}>65% TO BRONZE</Text>
@@ -937,7 +904,6 @@ const animationProgress = useSharedValue(0);
       </ScrollView>
     </View>
 
-    {/* Profile Settings Overlay Modal */}
     <Modal visible={showDropdown} transparent animationType="fade">
       <Pressable style={styles.modalOverlay} onPress={() => { setShowDropdown(false); setIsEditingName(false); }}>
         <Pressable style={[styles.dropdownCard, { backgroundColor: getDropdownBackground() }, !isDarkMode && { borderColor: '#e2e8f0', borderWidth: 1 }]}>
@@ -957,7 +923,6 @@ const animationProgress = useSharedValue(0);
               )}
               <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
               
-              {/* Dynamic Warrior League Badge Container */}
               <View style={[styles.leagueBadgeContainer, { backgroundColor: currentLeague.bg }]}>
                 <Text style={styles.leagueBadgeIcon}>{currentLeague.badge}</Text>
                 <Text style={[styles.leagueBadgeName, { color: currentLeague.color }]}>{currentLeague.name}</Text>
@@ -1001,7 +966,6 @@ const animationProgress = useSharedValue(0);
       </Pressable>
     </Modal>
 
-    {/* Nav Bar */}
     <View style={styles.navBar}>
       <View style={styles.navBarContent}>
         <Pressable style={styles.navItem} onPress={() => router.push("/dashboard")}>

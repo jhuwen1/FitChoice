@@ -14,7 +14,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Switch, // Added Switch component import here to resolve the ReferenceError
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,11 +25,9 @@ import { db } from "../firebaseConfig";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Dynamic notch layout padding fallback
 const NOTCH_PADDING_TOP = Platform.OS === 'ios' ? 54 : (StatusBar.currentHeight ? StatusBar.currentHeight + 10 : 44);
 const HEADER_HEIGHT = 56; 
 
-// ─── QUEST CARD WITH CORRESPONDING INDICATOR COLOR ───────────────────
 const QuestCard = ({ title, progress, goal, reward, unit, themeColor, isDark }) => {
   const currentProgress = Number(progress) || 0;
   const targetGoal = Number(goal) || 1; 
@@ -74,22 +72,17 @@ const QuestCard = ({ title, progress, goal, reward, unit, themeColor, isDark }) 
   );
 };
 
-// ─── MAIN QUEST SCREEN ───────────────────────────────────────────────
 export default function QuestScreen() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  // Core Sync States
   const [steps, setSteps] = useState(0);
   const [xp, setXP] = useState(0);
   const [workoutsCount, setWorkoutsCount] = useState(0); 
   
-  // Real-time dynamic timer state
   const [timeRemainingString, setTimeRemainingString] = useState("00:00:00");
-  // Boolean toggle state to rotate/alter layout goals dynamically every other day
   const [isQuestCycleB, setIsQuestCycleB] = useState(false);
 
-  // Profile settings drawer states
   const [localPhotoURI, setLocalPhotoURI] = useState(null);
   const [displayName, setDisplayName] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
@@ -105,12 +98,10 @@ export default function QuestScreen() {
   const level = currentXP > 0 ? Math.floor(currentXP / 100) + 1 : 1;
   const xpProgress = currentXP % 100;
 
-  // Monthly Definitions
   const monthlyStepGoal = 100000;
   const remainingMonthlySteps = Math.max(0, monthlyStepGoal - steps);
   const monthlyProgressPercent = Math.min(100, (steps / monthlyStepGoal) * 100);
 
-  // Background Video Player Config
   const videoSource = require("../assets/quest.mp4");
   const player = useVideoPlayer(videoSource, (playerInstance) => {
     playerInstance.loop = true;
@@ -118,21 +109,17 @@ export default function QuestScreen() {
     playerInstance.play();
   });
 
-  // Dynamic Bi-Daily Reset Countdown & Rotation Timer Loop
   useEffect(() => {
     const updateQuestTimer = () => {
       const now = new Date();
       
-      // Determine bi-daily epoch alignment (rotates every 48 hours relative to UTC base timestamp)
       const currentDayEpoch = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
       setIsQuestCycleB(currentDayEpoch % 2 === 0);
 
-      // Setup the dynamic alternating multi-day endpoint (resets at the end of the 2-day cluster)
       const targetResetDate = new Date();
       targetResetDate.setHours(23, 59, 59, 999);
       
       if (currentDayEpoch % 2 !== 0) {
-        // If we are on day 1 of the cycle, add 1 additional day until the end-of-cycle wipeout
         targetResetDate.setDate(targetResetDate.getDate() + 1);
       }
 
@@ -143,13 +130,11 @@ export default function QuestScreen() {
         return;
       }
 
-      // Convert differences to hours, minutes, and seconds
       const totalSeconds = Math.floor(millisecondsDiff / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
 
-      // Ensure neat formatting preservation matching layout metrics
       const formattedHours = hours.toString().padStart(2, '0');
       const formattedMinutes = minutes.toString().padStart(2, '0');
       const formattedSeconds = seconds.toString().padStart(2, '0');
@@ -166,7 +151,6 @@ export default function QuestScreen() {
   useEffect(() => {
     if (!user?.uid) return;
 
-    // 1. Root profile listener — Syncs User XP, Details, and Completed Exercises
     const unsubProfile = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -180,7 +164,6 @@ export default function QuestScreen() {
       }
     });
 
-    // 2. Daily Summary Step Listener — Accurately syncs step telemetry exactly like your dashboard
     const summariesRef = collection(db, "users", user.uid, "daily_summaries");
     const summaryQuery = query(summariesRef, orderBy("lastUpdatedTimestamp", "desc"), limit(1));
     
@@ -189,7 +172,6 @@ export default function QuestScreen() {
         const latestDoc = snapshot.docs[0].data();
         setSteps(Number(latestDoc.steps || 0));
       } else {
-        // Fallback trace to secondary path if historical summaries grid hasn't built yet
         const unsubFallback = onSnapshot(doc(db, "users", user.uid, "activity", "today"), (docFallback) => {
           if (docFallback.exists()) {
             setSteps(Number(docFallback.data().steps || 0));
@@ -256,8 +238,6 @@ export default function QuestScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? "#090d16" : "#f3f4f6" }]}>
-      
-      {/* ─── ALIGNED BRAND HEADER (Matches Progress Analytics Layout) ─── */}
       <View style={styles.topHeader}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={[styles.backArrowText, !isDarkMode && { color: '#1e293b' }]}>❮</Text>
@@ -276,7 +256,6 @@ export default function QuestScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Rank Progress Container */}
         <View style={styles.rankCardVideoContainer}>
           <VideoView 
             player={player} 
@@ -308,7 +287,6 @@ export default function QuestScreen() {
           </View>
         </View>
 
-        {/* Section: Daily Quests */}
         <View style={styles.sectionHeaderRow}>
           <Text style={[styles.sectionTitle, !isDarkMode && { color: '#1e293b' }]}>Daily Quests</Text>
           <View style={styles.timerBadge}>
@@ -335,11 +313,9 @@ export default function QuestScreen() {
           isDark={isDarkMode} 
         />
 
-        {/* Section: Weekly Challenges */}
         <Text style={[styles.sectionTitle, !isDarkMode && { color: '#1e293b' }]}>Weekly Challenges</Text>
         <QuestCard title="Weekend Warrior" progress={workoutsCount} goal={5} reward={250} unit="exercises remaining" themeColor="#f97316" isDark={isDarkMode} />
 
-        {/* Section: Monthly Legend */}
         <Text style={[styles.sectionTitle, !isDarkMode && { color: '#1e293b' }]}>Monthly Legend</Text>
         <View style={[styles.monthlyLegendContainer, !isDarkMode && { borderColor: '#e2e8f0' }]}>
           {useGifBackground && (
@@ -376,7 +352,6 @@ export default function QuestScreen() {
           </View>
         </View>
 
-        {/* Section: Unlocked Rewards Grid */}
         <View style={styles.unlockedRewardsHeaderRow}>
           <Text style={[styles.sectionTitle, !isDarkMode && { color: '#1e293b' }]}>Unlocked Rewards</Text>
           <TouchableOpacity><Text style={styles.viewAllActionText}>VIEW ALL</Text></TouchableOpacity>
@@ -399,7 +374,6 @@ export default function QuestScreen() {
 
       </ScrollView>
 
-      {/* Profile Overlay Modal */}
       <Modal visible={showDropdown} transparent animationType="fade" onRequestClose={() => setShowDropdown(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => { setShowDropdown(false); setIsEditingName(false); }}>
           <View style={[styles.dropdownCard, !isDarkMode && { backgroundColor: '#fff', borderColor: '#e2e8f0', borderWidth: 1 }]}>
@@ -469,13 +443,11 @@ export default function QuestScreen() {
   );
 }
 
-// ─── DESIGN STYLES ARCHITECTURE ──────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   
-  // Header Style Update: Implements Absolute Layout Elements for Pixel-Perfect Alignment Calibration
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -495,8 +467,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   backArrowText: {
-    color: '#ffffff', // Changed to pure white
-    fontSize: 22,     // Updated visual weight sizing
+    color: '#ffffff',
+    fontSize: 22,   
     fontWeight: "bold",
   },
   headerTitleContainer: {

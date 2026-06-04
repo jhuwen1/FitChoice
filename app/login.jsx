@@ -1,18 +1,18 @@
 import {
-  FontAwesome,
-  Ionicons,
-  MaterialCommunityIcons,
+    FontAwesome,
+    Ionicons,
+    MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -70,7 +70,7 @@ export default function Login() {
         setErrors({ email: "Invalid email format" });
       } else if (error.code === "auth/too-many-requests") {
         Alert.alert("Locked", "Too many failed attempts. Try again later.");
-      } else {
+      } else { 
         Alert.alert("Login Error", error.message || "Something went wrong.");
       }
     }

@@ -106,7 +106,6 @@ export default function Index() {
         />
       </View>
 
-      {/* Fixed: Removed the floating '+' symbol right after the map closing parenthesis */}
       <View style={styles.dots}>
         {data.map((_, index) => (
           <View

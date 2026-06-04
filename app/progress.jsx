@@ -49,7 +49,7 @@ export default function ProgressScreen() {
     protein: 0,
     steps: 0,
     xpGained: 0,
-    burnedCalories: 0 // Track total calorie expenditure
+    burnedCalories: 0 
   });
 
   const [timeRange, setTimeRange] = useState('1W');
@@ -133,7 +133,6 @@ export default function ProgressScreen() {
           totalPro += Number(data.protein || 0);
           totalSteps += Number(data.steps || 0);
           
-          // Pull and add step-burned calories + exercise calculations from summary doc parameters
           const recordSteps = Number(data.steps || 0);
           const stepBurn = Math.floor(recordSteps * 0.04);
           const exerciseBurn = Number(data.exerciseBurnedCalories || data.burnedCalories || 0);
@@ -426,39 +425,208 @@ const styles = StyleSheet.create({
     right: 16,
     width: 40,
   },
-  scrollContainer: { paddingHorizontal: 16, paddingBottom: 32 },
-  sectionLabel: { color: "#475569", fontSize: 11, fontWeight: "700", letterSpacing: 1.5, marginTop: 24, marginBottom: 12, paddingLeft: 2 },
-  weightProfileRow: { flexDirection: "row", justifyContent: "space-between" },
-  weightCard: { backgroundColor: "#131a2e", width: CARD_WIDTH, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#1e294b" },
-  cardLabelText: { color: "#64748b", fontSize: 10, fontWeight: "700", letterSpacing: 0.8 },
-  weightNumberRow: { flexDirection: "row", alignItems: "baseline", marginTop: 14 },
-  weightPrimaryValue: { color: "#06b6d4", fontSize: 34, fontWeight: "900" },
-  unitText: { color: "#475569", fontSize: 12, fontWeight: "700", marginLeft: 4 },
-  trendVarianceText: { color: "#ef4444", fontSize: 11, fontWeight: "600", marginTop: 10 },
-  miniProgressBarBackground: { height: 5, backgroundColor: "#1e294b", borderRadius: 3, marginTop: 16, overflow: 'hidden' },
-  miniProgressBarFill: { height: '100%', backgroundColor: "#a3e635", borderRadius: 3 },
-  goalRemainingText: { color: "#64748b", fontSize: 10, fontWeight: "700", marginTop: 8, letterSpacing: 0.5 },
-  graphDashboardWrapper: { backgroundColor: "#131a2e", borderRadius: 16, padding: 16, borderWidth: 1, borderColor: "#1e294b" },
-  timeFilterContainer: { flexDirection: "row", justifyContent: "flex-end", marginBottom: 12 },
-  timeTabButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginLeft: 6, backgroundColor: "transparent" },
-  activeTimeTab: { backgroundColor: "#222f54" },
-  timeTabText: { color: "#475569", fontSize: 11, fontWeight: "700" },
-  activeTimeText: { color: "#94a3b8" },
-  canvasContainer: { height: 120, width: "100%", justifyContent: "center", alignItems: "center", paddingTop: 8 },
-  loaderContainer: { alignItems: "center", justifyContent: "center" },
-  calibratingText: { color: "#94a3b8", fontSize: 14, fontWeight: "600", letterSpacing: 0.5 },
-  subCalibratingText: { color: "#475569", fontSize: 11, marginTop: 4 },
-  bentoGridFlowContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  analyticsCard: { backgroundColor: "#131a2e", width: CARD_WIDTH, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#1e294b", justifyContent: "space-between", minHeight: 125 },
-  cardHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  cardTitle: { color: "#64748b", fontSize: 10, fontWeight: "800", letterSpacing: 0.6 },
-  iconContainer: { opacity: 0.8 },
-  emojiGlyph: { fontSize: 14 },
-  cardValue: { fontSize: 24, fontWeight: "900", marginTop: 6 },
-  cardSubtext: { color: "#475569", fontSize: 10, fontWeight: "600", marginTop: 4, lineHeight: 14 },
-  proTipBanner: { flexDirection: "row", backgroundColor: "#131a2e", borderRadius: 16, padding: 16, marginTop: 12, borderWidth: 1, borderColor: "#1e294b", alignItems: "flex-start" },
-  boltIconContainer: { width: 28, height: 28, borderRadius: 8, backgroundColor: "rgba(6, 182, 212, 0.15)", justifyContent: "center", alignItems: "center", marginRight: 12, marginTop: 2 },
-  proTipContentTextColumn: { flex: 1 },
-  proTipTitleText: { color: "#06b6d4", fontSize: 11, fontWeight: "800", letterSpacing: 1 },
-  proTipBodyDescription: { color: "#94a3b8", fontSize: 12, lineHeight: 18, marginTop: 4, fontWeight: "500" }
+  scrollContainer: { 
+    paddingHorizontal: 16, 
+    paddingBottom: 32 
+  },
+  sectionLabel: { 
+    color: "#475569", 
+    fontSize: 11, 
+    fontWeight: "700", 
+    letterSpacing: 1.5, 
+    marginTop: 24, 
+    marginBottom: 12, 
+    paddingLeft: 2 
+  },
+  weightProfileRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between" 
+  },
+  weightCard: { 
+    backgroundColor: "#131a2e", 
+    width: CARD_WIDTH, 
+    borderRadius: 16, 
+    padding: 16, 
+    borderWidth: 1, 
+    borderColor: "#1e294b" 
+  },
+  cardLabelText: { 
+    color: "#64748b", 
+    fontSize: 10, 
+    fontWeight: "700", 
+    letterSpacing: 0.8 
+  },
+  weightNumberRow: { 
+    flexDirection: "row", 
+    alignItems: "baseline", 
+    marginTop: 14 
+  },
+  weightPrimaryValue: { 
+    color: "#06b6d4", 
+    fontSize: 34, 
+    fontWeight: "900" 
+  },
+  unitText: { 
+    color: "#475569", 
+    fontSize: 12, 
+    fontWeight: "700", 
+    marginLeft: 4 
+  },
+  trendVarianceText: { 
+    color: "#ef4444", 
+    fontSize: 11, 
+    fontWeight: "600", 
+    marginTop: 10 
+  },
+  miniProgressBarBackground: { 
+    height: 5, 
+    backgroundColor: "#1e294b", 
+    borderRadius: 3, 
+    marginTop: 16, 
+    overflow: 'hidden' 
+  },
+  miniProgressBarFill: { 
+    height: '100%', 
+    backgroundColor: "#a3e635", 
+    borderRadius: 3 
+  },
+  goalRemainingText: { 
+    color: "#64748b", 
+    fontSize: 10, 
+    fontWeight: "700", 
+    marginTop: 8, 
+    letterSpacing: 0.5 
+  },
+  graphDashboardWrapper: { 
+    backgroundColor: "#131a2e", 
+    borderRadius: 16, 
+    padding: 16, 
+    borderWidth: 1, 
+    borderColor: "#1e294b" 
+  },
+  timeFilterContainer: {
+     flexDirection: "row", 
+     justifyContent: "flex-end", 
+     marginBottom: 12 
+  },
+  timeTabButton: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 8, 
+    marginLeft: 6, 
+    backgroundColor: "transparent" 
+  },
+  activeTimeTab: { 
+    backgroundColor: "#222f54" 
+  },
+  timeTabText: { 
+    color: "#475569", 
+    fontSize: 11, 
+    fontWeight: "700" 
+  },
+  activeTimeText: { 
+    color: "#94a3b8" 
+  },
+  canvasContainer: { 
+    height: 120, 
+    width: "100%", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    paddingTop: 8 
+  },
+  loaderContainer: { 
+    alignItems: "center", 
+    justifyContent: "center"
+ },
+  calibratingText: { 
+    color: "#94a3b8", 
+    fontSize: 14, 
+    fontWeight: "600", 
+    letterSpacing: 0.5 
+  },
+  subCalibratingText: { 
+    color: "#475569", 
+    fontSize: 11, 
+    marginTop: 4 
+  },
+  bentoGridFlowContainer: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    justifyContent: "space-between" 
+  },
+  analyticsCard: { 
+    backgroundColor: "#131a2e", 
+    width: CARD_WIDTH, 
+    borderRadius: 18, 
+    padding: 16, 
+    marginBottom: 12, 
+    borderWidth: 1, 
+    borderColor: "#1e294b", 
+    justifyContent: "space-between", 
+    minHeight: 125 
+  },
+  cardHeaderRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center" 
+  },
+  cardTitle: { 
+    color: "#64748b", 
+    fontSize: 10, 
+    fontWeight: "800", 
+    letterSpacing: 0.6 
+  },
+  iconContainer: {
+    opacity: 0.8 },
+  emojiGlyph: {
+    fontSize: 14 
+  },
+  cardValue: { 
+    fontSize: 24, 
+    fontWeight: "900", 
+    marginTop: 6 
+  },
+  cardSubtext: { 
+    color: "#475569", 
+    fontSize: 10, 
+    fontWeight: "600", 
+    marginTop: 4, 
+    lineHeight: 14 
+  },
+  proTipBanner: { 
+    flexDirection: "row", 
+    backgroundColor: "#131a2e", 
+    borderRadius: 16, 
+    padding: 16, 
+    marginTop: 12, 
+    borderWidth: 1, 
+    borderColor: "#1e294b", 
+    alignItems: "flex-start" 
+  },
+  boltIconContainer: { 
+    width: 28, 
+    height: 28, 
+    borderRadius: 8, 
+    backgroundColor: "rgba(6, 182, 212, 0.15)", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginRight: 12, 
+    marginTop: 2 
+  },
+  proTipContentTextColumn: { 
+    flex: 1 
+  },
+  proTipTitleText: { 
+    color: "#06b6d4", 
+    fontSize: 11, 
+    fontWeight: "800", 
+    letterSpacing: 1 
+  },
+  proTipBodyDescription: { 
+    color: "#94a3b8", 
+    fontSize: 12, 
+    lineHeight: 18, 
+    marginTop: 4, 
+    fontWeight: "500" 
+  }
 });

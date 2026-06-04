@@ -9,12 +9,10 @@ import {
   View,
 } from "react-native";
 
-// Firebase
 import { doc, setDoc } from "firebase/firestore";
 import { useAuth } from "../contexts/AuthContext";
 import { db } from "../firebaseConfig";
 
-// Modern 3D Imports + Progress Tracking
 import { useGLTF, useProgress } from "@react-three/drei/native";
 import { Canvas, useFrame } from "@react-three/fiber/native";
 
@@ -31,8 +29,6 @@ const MODELS_DATA = {
   ],
 };
 
-// --- PRELOAD ALL MODELS ON APP LAUNCH ---
-// This forces Metro/Expo to cache the geometry and textures into RAM immediately
 MODELS_DATA.male.forEach(item => useGLTF.preload(item.file));
 MODELS_DATA.female.forEach(item => useGLTF.preload(item.file));
 
@@ -68,7 +64,6 @@ export default function SetupScreen() {
   const [selected, setSelected] = useState(false);
   const [showHints, setShowHints] = useState(true);
 
-  // Hook into Three's loading engine to get real-time tracking metrics
   const { progress, loaded, total } = useProgress();
   const allModelsReady = progress === 100 || loaded >= total;
 

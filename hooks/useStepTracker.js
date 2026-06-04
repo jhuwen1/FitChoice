@@ -9,11 +9,9 @@ export function useStepTracker(onStepDetected) {
     let lastUpdate = 0;
 
     const subscribe = async () => {
-      //doesn't need to be restricted for mobile phones
       const isAvailable = await Accelerometer.isAvailableAsync();
 
       if (isAvailable) {
-        //100 ms to delay, to avoid too many false positives and to give a more natural step detection feel. which we can adjust as needed.
         Accelerometer.setUpdateInterval(100);
 
         subscription = Accelerometer.addListener((data) => {

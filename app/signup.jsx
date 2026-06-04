@@ -179,14 +179,12 @@ export default function signup() {
           {agreed && <View style={styles.innerDot} />}
         </View>
         
-        {/* Important: Do NOT put an onPress on this outer Text if possible, 
-            as it can conflict with the nested ones in some RN versions */}
         <Text style={styles.terms}>
           I agree to the{" "}
           <Text 
             style={styles.link} 
             onPress={(e) => {
-              e.stopPropagation(); // 3. Prevents the checkbox from toggling
+              e.stopPropagation(); 
               router.push("/tac"); 
             }}
           >

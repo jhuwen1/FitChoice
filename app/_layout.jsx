@@ -2,8 +2,6 @@ import { Stack } from "expo-router";
 import { Image } from "react-native";
 import { AuthProvider } from "../contexts/AuthContext";
 
-// LOCK DOWN IMAGE.GETSIZE AT METRO BOOT
-// Prevents dynamic components (like expo-three screens) from resetting the guard on remount
 if (Image && Image.getSize) {
   const originalGetSize = Image.getSize;
   
@@ -18,7 +16,7 @@ if (Image && Image.getSize) {
       }
       return originalGetSize.apply(this, arguments);
     },
-    writable: false, // Disables structural overrides from external dependencies
+    writable: false, 
     configurable: true,
   });
 }
