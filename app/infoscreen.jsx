@@ -116,7 +116,6 @@ export default function InfoScreen() {
     return (
       <View style={styles.loadingOverlay}>
         <Text style={styles.loadingLogo}>Fit<Text style={{ color: "#f97316" }}>Choice</Text></Text>
-        <Animated.View style={runStyle}><Text style={styles.runningEmoji}>🏋️</Text></Animated.View>
         <ActivityIndicator size="large" color="#f97316" style={{ marginTop: 20 }} />
         <Text style={styles.loadingText}>Finalizing your profile...</Text>
       </View>
@@ -223,9 +222,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold", 
     color: "#fff", 
     marginBottom: 20 
-  },
-  runningEmoji: { 
-    fontSize: 50 
   },
   loadingText: { 
     color: "#94a3b8", 

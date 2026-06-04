@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   msg: {
-    color: THEME.text,
+    color: THEME.primary,
     marginBottom: 20,
     fontSize: 14,
   },

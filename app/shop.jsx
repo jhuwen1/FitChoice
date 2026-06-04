@@ -234,70 +234,435 @@ export default function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0e0a08', paddingTop: 60 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 5, 4, 0.92)', alignItems: 'center', justifyContent: 'center' },
-  sunburstContainer: { position: 'absolute', width: 500, height: 500, alignItems: 'center', justifyContent: 'center', opacity: 0.2 },
-  sunburstRay: { position: 'absolute', width: 90, height: 600, backgroundColor: '#ff9900' },
-  rewardCardFrame: { backgroundColor: '#1b120f', width: '82%', borderRadius: 24, borderWidth: 2, borderColor: '#e25c28', padding: 24, alignItems: 'center' },
-  glowHalo: { position: 'absolute', top: -2, bottom: -2, left: -2, right: -2, borderRadius: 24, borderWidth: 1, borderColor: '#fff', opacity: 0.15 },
-  unlockedRarityTag: { color: '#ff9900', fontWeight: '900', fontSize: 13, letterSpacing: 2, marginBottom: 20 },
-  rewardIconOuterRing: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#2b1912', borderWidth: 2, borderColor: '#e25c28', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  modalRewardIcon: { width: 90, height: 90 }, // Increased from 55 to occupy almost the entire ring
-  unlockedItemTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 8, letterSpacing: 0.5 },
-  unlockedItemSubtext: { color: '#a39793', fontSize: 12, textAlign: 'center', lineHeight: 18, marginBottom: 28, paddingHorizontal: 10 },
-  equipActionBtn: { backgroundColor: '#e25c28', width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-  equipBtnText: { color: '#ffffff', fontWeight: '900', fontSize: 14, letterSpacing: 0.5 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 },
-  backBtn: { padding: 4 },
-  backArrow: { color: '#a39793', fontSize: 20, fontWeight: '600' },
-  headerTitle: { fontSize: 22, fontWeight: '900', color: '#ffffff', letterSpacing: 0.3 },
-  coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#19110e', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#2e1e18' },
-  coinEmoji: { fontSize: 14, marginRight: 5 },
-  buttonCoinEmoji: { fontSize: 12 },
-  coinText: { color: '#e25c28', fontWeight: '700', fontSize: 13 },
-  scrollContainer: { paddingHorizontal: 16, paddingBottom: 40 },
-  subtitle: { color: '#6e625e', fontSize: 13, lineHeight: 18, marginBottom: 24, fontWeight: '500' },
-  flashSaleCard: { position: 'relative', marginBottom: 20, borderRadius: 16 },
-  flashHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, zIndex: 3, paddingHorizontal: 16, paddingTop: 16 },
-  flashLiveBadge: { backgroundColor: '#e25c2818', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  flashLiveText: { color: '#e25c28', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' },
-  countdownText: { color: '#6e625e', fontSize: 11, fontWeight: '700' },
-  timeHighlight: { color: '#ffffff' },
-  flashBody: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, zIndex: 3, paddingHorizontal: 16 },
-  flashIconBox: { backgroundColor: '#261712', width: 64, height: 64, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14, borderWidth: 1, borderColor: '#3a2118' },
-  flashDetails: { flex: 1 },
-  flashTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800', marginBottom: 2 },
-  flashDesc: { color: '#8c7f7a', fontSize: 12, marginBottom: 8 },
-  priceRow: { flexDirection: 'row', alignItems: 'center' },
-  crossedPrice: { color: '#544945', fontSize: 12, textDecorationLine: 'line-through', marginRight: 8, fontWeight: '600' },
-  activePrice: { color: '#e25c28', fontSize: 18, fontWeight: '900' },
-  claimButton: { backgroundColor: '#e25c28', marginHorizontal: 16, marginBottom: 16, paddingVertical: 12, borderRadius: 8, alignItems: 'center', zIndex: 3 },
-  claimBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 14 },
-  itemsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  itemCardContainer: { width: '48%', marginBottom: 16, position: 'relative' },
-  cardBacklightHighlight: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, zIndex: 1 },
-  itemCard: { backgroundColor: '#140f0d', borderRadius: 16, padding: 16, alignItems: 'center', zIndex: 2 },
-  standardBorder: { borderWidth: 1.5, borderColor: '#231915' },
-  iconWrapper: { backgroundColor: '#1d1411', width: 68, height: 68, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 14 }, // Slightly expanded box space
-  localIconImage: { width: 52, height: 52, borderRadius: 6 }, // Increased from 32 to fill almost the entire box
-  localIconImageLarge: { width: 54, height: 54, borderRadius: 6 }, // Increased from 38 to fill flash sale box 
-  itemTitle: { color: '#ffffff', fontWeight: '800', fontSize: 14, marginBottom: 6, textAlign: 'center' },
-  itemDesc: { color: '#6e625e', fontSize: 11, textAlign: 'center', lineHeight: 15, marginBottom: 16, height: 30 },
-  purchaseBtn: { width: '100%', paddingVertical: 8, borderRadius: 20, alignItems: 'center', borderWidth: 1.5, borderColor: '#e25c28' },
-  ownedBtn: { backgroundColor: '#231915', borderColor: '#231915' },
-  btnInnerContent: { flexDirection: 'row', alignItems: 'center' },
-  btnText: { color: '#ffffff', fontWeight: '800', fontSize: 13 },
-  legendaryCard: { position: 'relative', marginTop: 10, borderRadius: 16 },
-  legendaryInnerFrame: { backgroundColor: '#19120f', borderWidth: 1.5, borderColor: '#cca43b55', borderRadius: 16, padding: 16, zIndex: 2, position: 'relative', overflow: 'hidden' },
-  laserGlowBeam: { position: 'absolute', top: -100, bottom: -100, width: 45, backgroundColor: 'rgba(204, 164, 59, 0.28)', zIndex: 1 },
-  legendaryBadge: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, zIndex: 2 },
-  legendaryBadgeText: { color: '#cca43b', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  legendaryContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 },
-  legendaryLeft: { flex: 1, paddingRight: 10 },
-  legendaryTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  legendaryDesc: { color: '#8c7f7a', fontSize: 12, lineHeight: 16 },
-  legendaryPurchaseBtn: { backgroundColor: '#cca43b15', borderWidth: 1.5, borderColor: '#cca43b', borderRadius: 12, width: 76, height: 64, justifyContent: 'center', alignItems: 'center' },
-  legendaryCoinEmoji: { fontSize: 14, marginBottom: 2 },
-  legendaryBtnText: { color: '#ffffff', fontWeight: '900', fontSize: 14, lineHeight: 14 },
-  legendarySubText: { color: '#cca43b', fontSize: 8, fontWeight: '700' },
+  // ==========================================
+  // Global Containers & Modals
+  // ==========================================
+  container: { 
+    flex: 1, 
+    backgroundColor: '#0e0a08', 
+    paddingTop: 60 
+  },
+  scrollContainer: { 
+    paddingHorizontal: 16, 
+    paddingBottom: 40 
+  },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(7, 5, 4, 0.92)', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  sunburstContainer: { 
+    position: 'absolute', 
+    width: 500, 
+    height: 500, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    opacity: 0.2 
+  },
+  sunburstRay: { 
+    position: 'absolute', 
+    width: 90, 
+    height: 600, 
+    backgroundColor: '#ff9900' 
+  },
+  rewardCardFrame: { 
+    backgroundColor: '#1b120f', 
+    width: '82%', 
+    borderRadius: 24, 
+    borderWidth: 2, 
+    borderColor: '#e25c28', 
+    padding: 24, 
+    alignItems: 'center' 
+  },
+  glowHalo: { 
+    position: 'absolute', 
+    top: -2, 
+    bottom: -2, 
+    left: -2, 
+    right: -2, 
+    borderRadius: 24, 
+    borderWidth: 1, 
+    borderColor: '#fff', 
+    opacity: 0.15 
+  },
+  rewardIconOuterRing: { 
+    width: 110, 
+    height: 110, 
+    borderRadius: 55, 
+    backgroundColor: '#2b1912', 
+    borderWidth: 2, 
+    borderColor: '#e25c28', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  modalRewardIcon: { 
+    width: 90, 
+    height: 90 
+  }, 
+  unlockedRarityTag: { 
+    color: '#ff9900', 
+    fontWeight: '900', 
+    fontSize: 13, 
+    letterSpacing: 2, 
+    marginBottom: 20 
+  },
+  unlockedItemTitle: { 
+    color: '#ffffff', 
+    fontSize: 22, 
+    fontWeight: '900', 
+    textAlign: 'center', 
+    marginBottom: 8, 
+    letterSpacing: 0.5 
+  },
+  unlockedItemSubtext: { 
+    color: '#a39793', 
+    fontSize: 12, 
+    textAlign: 'center', 
+    lineHeight: 18, 
+    marginBottom: 28, 
+    paddingHorizontal: 10 
+  },
+  equipActionBtn: { 
+    backgroundColor: '#e25c28', 
+    width: '100%', 
+    paddingVertical: 14, 
+    borderRadius: 12, 
+    alignItems: 'center' 
+  },
+  equipBtnText: { 
+    color: '#ffffff', 
+    fontWeight: '900', 
+    fontSize: 14, 
+    letterSpacing: 0.5 
+  },
+
+  // ==========================================
+  // Header Elements
+  // ==========================================
+  headerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    marginBottom: 20 
+  },
+  headerTitle: { 
+    fontSize: 22, 
+    fontWeight: '900', 
+    color: '#ffffff', 
+    letterSpacing: 0.3 
+  },
+  subtitle: { 
+    color: '#6e625e', 
+    fontSize: 13, 
+    lineHeight: 18, 
+    marginBottom: 24, 
+    fontWeight: '500' 
+  },
+  backBtn: { 
+    padding: 4 
+  },
+  backArrow: { 
+    color: '#a39793', 
+    fontSize: 20, 
+    fontWeight: '600' 
+  },
+  coinBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#19110e', 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 20, 
+    borderWidth: 1, 
+    borderColor: '#2e1e18' 
+  },
+  coinEmoji: { 
+    fontSize: 14, 
+    marginRight: 5 
+  },
+  coinText: { 
+    color: '#e25c28', 
+    fontWeight: '700', 
+    fontSize: 13 
+  },
+
+  // ==========================================
+  // Flash Sale Section
+  // ==========================================
+  flashSaleCard: { 
+    position: 'relative', 
+    marginBottom: 20, 
+    borderRadius: 16 
+  },
+  flashHeaderRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 16, 
+    zIndex: 3, 
+    paddingHorizontal: 16, 
+    paddingTop: 16 
+  },
+  flashLiveBadge: { 
+    backgroundColor: '#e25c2818', 
+    paddingHorizontal: 10, 
+    paddingVertical: 4, 
+    borderRadius: 6 
+  },
+  flashLiveText: { 
+    color: '#e25c28', 
+    fontSize: 12, 
+    fontWeight: '800', 
+    textTransform: 'uppercase' 
+  },
+  countdownText: { 
+    color: '#6e625e', 
+    fontSize: 11, 
+    fontWeight: '700' 
+  },
+  timeHighlight: { 
+    color: '#ffffff' 
+  },
+  flashBody: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 16, 
+    zIndex: 3, 
+    paddingHorizontal: 16 
+  },
+  flashIconBox: { 
+    backgroundColor: '#261712', 
+    width: 64, 
+    height: 64, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 14, 
+    borderWidth: 1, 
+    borderColor: '#3a2118' 
+  },
+  flashDetails: { 
+    flex: 1 
+  },
+  flashTitle: { 
+    color: '#ffffff', 
+    fontSize: 16, 
+    fontWeight: '800', 
+    marginBottom: 2 
+  },
+  flashDesc: { 
+    color: '#8c7f7a', 
+    fontSize: 12, 
+    marginBottom: 8 
+  },
+  priceRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  crossedPrice: { 
+    color: '#544945', 
+    fontSize: 12, 
+    textDecorationLine: 'line-through', 
+    marginRight: 8, 
+    fontWeight: '600' 
+  },
+  activePrice: { 
+    color: '#e25c28', 
+    fontSize: 18, 
+    fontWeight: '900' 
+  },
+  claimButton: { 
+    backgroundColor: '#e25c28', 
+    marginHorizontal: 16, 
+    marginBottom: 16, 
+    paddingVertical: 12, 
+    borderRadius: 8, 
+    alignItems: 'center', 
+    zIndex: 3 
+  },
+  claimBtnText: { 
+    color: '#ffffff', 
+    fontWeight: '800', 
+    fontSize: 14 
+  },
+
+  // ==========================================
+  // Items Grid & Standard Cards
+  // ==========================================
+  itemsGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between' 
+  },
+  itemCardContainer: { 
+    width: '48%', 
+    marginBottom: 16, 
+    position: 'relative' 
+  },
+  cardBacklightHighlight: { 
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    bottom: 0, 
+    borderRadius: 16, 
+    zIndex: 1 
+  },
+  itemCard: { 
+    backgroundColor: '#140f0d', 
+    borderRadius: 16, 
+    padding: 16, 
+    alignItems: 'center', 
+    zIndex: 2 
+  },
+  standardBorder: { 
+    borderWidth: 1.5, 
+    borderColor: '#231915' 
+  },
+  iconWrapper: { 
+    backgroundColor: '#1d1411', 
+    width: 68, 
+    height: 68, 
+    borderRadius: 14, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 14 
+  },
+  localIconImage: { 
+    width: 52, 
+    height: 52, 
+    borderRadius: 6 
+  },
+  localIconImageLarge: { 
+    width: 54, 
+    height: 54, 
+    borderRadius: 6 
+  },
+  itemTitle: { 
+    color: '#ffffff', 
+    fontWeight: '800', 
+    fontSize: 14, 
+    marginBottom: 6, 
+    textAlign: 'center' 
+  },
+  itemDesc: { 
+    color: '#6e625e', 
+    fontSize: 11, 
+    textAlign: 'center', 
+    lineHeight: 15, 
+    marginBottom: 16, 
+    height: 30 
+  },
+  purchaseBtn: { 
+    width: '100%', 
+    paddingVertical: 8, 
+    borderRadius: 20, 
+    alignItems: 'center', 
+    borderWidth: 1.5, 
+    borderColor: '#e25c28' 
+  },
+  ownedBtn: { 
+    backgroundColor: '#231915', 
+    borderColor: '#231915' 
+  },
+  btnInnerContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  btnText: { 
+    color: '#ffffff', 
+    fontWeight: '800', 
+    fontSize: 13 
+  },
+  buttonCoinEmoji: { 
+    fontSize: 12 
+  },
+
+  // ==========================================
+  // Legendary Card Section
+  // ==========================================
+  legendaryCard: { 
+    position: 'relative', 
+    marginTop: 10, 
+    borderRadius: 16 
+  },
+  legendaryInnerFrame: { 
+    backgroundColor: '#19120f', 
+    borderWidth: 1.5, 
+    borderColor: '#cca43b55', 
+    borderRadius: 16, 
+    padding: 16, 
+    zIndex: 2, 
+    position: 'relative', 
+    overflow: 'hidden' 
+  },
+  laserGlowBeam: { 
+    position: 'absolute', 
+    top: -100, 
+    bottom: -100, 
+    width: 45, 
+    backgroundColor: 'rgba(204, 164, 59, 0.28)', 
+    zIndex: 1 
+  },
+  legendaryBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 12, 
+    zIndex: 2 
+  },
+  legendaryBadgeText: { 
+    color: '#cca43b', 
+    fontSize: 10, 
+    fontWeight: '800', 
+    letterSpacing: 0.5 
+  },
+  legendaryContent: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    zIndex: 2 
+  },
+  legendaryLeft: { 
+    flex: 1, 
+    paddingRight: 10 
+  },
+  legendaryTitle: { 
+    color: '#ffffff', 
+    fontSize: 16, 
+    fontWeight: '800', 
+    marginBottom: 4 
+  },
+  legendaryDesc: { 
+    color: '#8c7f7a', 
+    fontSize: 12, 
+    lineHeight: 16 
+  },
+  legendaryPurchaseBtn: { 
+    backgroundColor: '#cca43b15', 
+    borderWidth: 1.5, 
+    borderColor: '#cca43b', 
+    borderRadius: 12, 
+    width: 76, 
+    height: 64, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  legendaryCoinEmoji: { 
+    fontSize: 14, 
+    marginBottom: 2 
+  },
+  legendaryBtnText: { 
+    color: '#ffffff', 
+    fontWeight: '900', 
+    fontSize: 14, 
+    lineHeight: 14 
+  },
+  legendarySubText: { 
+    color: '#cca43b', 
+    fontSize: 8, 
+    fontWeight: '700' 
+  },
 });
