@@ -1,4 +1,4 @@
-import { onAuthStateChanged, signOut } from "firebase/auth"; // Added signOut import
+import { onAuthStateChanged, signOut } from "firebase/auth"
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebaseConfig";
 
