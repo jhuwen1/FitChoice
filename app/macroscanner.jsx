@@ -45,7 +45,7 @@ const CAROUSEL_IMAGES = [
   require("../assets/images/body4.png"),
 ];
 
-const GEMINI_API_KEY = "AQ.Ab8RN6K_nSlLI9UPT5-S0SDDHtpQhuOVOlr5rhXbpLPQbyAgdA"; 
+const GEMINI_API_KEY = ""; 
 
 export default function MacroScanner() {
   const { user } = useAuth();
@@ -121,7 +121,7 @@ useEffect(() => {
     setScanned(true);
     setLoading(true);
     try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${data}.json`);
+      const res = await fetch(`${data}.json`);
       const json = await res.json();
       
       if (json.status === 1) {
@@ -172,7 +172,7 @@ useEffect(() => {
         throw new Error("Viewfinder frame asset string collection dropped.");
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+      const url = `${GEMINI_API_KEY}`;
       
       const payload = {
         contents: [
@@ -245,7 +245,7 @@ useEffect(() => {
     setNutrition(null);
 
     try {
-      const url = `https://api.edamam.com/api/nutrition-data?app_id=${EDAMAM_CONFIG.APP_ID}&app_key=${EDAMAM_CONFIG.APP_KEY}&ingr=${encodeURIComponent(
+      const url = `${EDAMAM_CONFIG.APP_KEY}&ingr=${encodeURIComponent(
         foodInput
       )}`;
 
@@ -348,7 +348,6 @@ if (!isScanning) {
           <View style={styles.headerCentered}>
             <Text style={styles.titleCentered}>Select Tracking Methodology</Text>
             
-            {/* Added your extracted component here */}
             <MetricDisclaimer />
           </View>
 
@@ -585,11 +584,7 @@ if (!isScanning) {
       />
     </View>
   );
-} // <--- End of your main component function
-
-// ====================================================
-// STANDALONE SUB-COMPONENTS SITTING AT THE BOTTOM
-// ====================================================
+}
 
 function MetricDisclaimer() {
   return (
