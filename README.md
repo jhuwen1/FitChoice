@@ -57,13 +57,18 @@ Even though the interface and logic flow are written in JavaScript/TypeScript, t
 
 ## 📥 Installation & Setup
 
-## 📱 Scan to Download / View Project
+## Scan to Download / View Project
 To run or preview the application immediately, scan the QR code below:
 
 <p align="left">
   <img src="assets/images/Screenshot 2026-06-05 125831.png" width="600" alt="FitChoice App QR Code" />
 </p>
 
+## Download via link
+https://expo.dev/accounts/jhuwens-organization/projects/fitchoice/builds/1fac1822-f4d8-46aa-844f-28c9d59a788f
+
+
+## Instruction to open the app via local machine/vscode
 Follow these steps to run **FitChoice** locally in your development environment:
 
 ### Prerequisites
