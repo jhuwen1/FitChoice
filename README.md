@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/logo.png" width="450" alt="FitChoice Logo" />
+  <img src="assets/images/splash-icon.png" width="450" alt="FitChoice Logo" />
 </p>
 
 
