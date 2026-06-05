@@ -132,7 +132,7 @@ Follow these steps to run **FitChoice** locally in your development environment:
 
 ## Development Team
 Proudly engineered and developed by:
-* **Jhuwen Justin Asido Carloto**
+* **Jhuwen Justin Carloto**
 * **Miguel Jiro Cerdena**
 * **Timothy James Canayon**
 * **Aidan Alexander Aganon**
