@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="assets/images/logo.png" width="450" alt="FitChoice Logo" />
+</p>
+
+
+
 # Fit<span style="color: #FF6B35;">Choice</span>
 
 A gamified health and fitness application that transforms macro tracking and habit building into an engaging, immersive journey. Built using a modern multi-platform stack, **FitChoice** blends 3D visualization, interactive leveling systems, and precision nutritional tracking to motivate users to achieve their physical wellness goals.
