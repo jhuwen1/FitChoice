@@ -82,6 +82,20 @@ Follow these steps to run **FitChoice** locally in your development environment:
 * For Android testing: **Android Studio** and an active Emulator.
 * For iOS testing (macOS only): **Xcode** and CocoaPods.
 
+---
+
+> ### ⚠️ Note for Professors & Evaluators: API Keys Removed
+> 
+> For security reasons, the live database and authentication API keys have been temporarily removed from this public repository. 
+> 
+> **How to run the full application:**
+> Please contact Jacarloto@student.apc.edu.ph on teams directly to get the active project credentials. Once you have the keys, you will just need to drop them into the configuration placeholders inside:
+> * 📄 **`firebaseConfig.js`**
+
+> After pasting the keys into these files, the app will instantly connect to the live backend and become fully functional for grading!
+
+---
+
 ### Step-by-Step Deployment
 
 1.  **Clone the Repository:**
