@@ -1,4 +1,4 @@
-# FitChoice 
+# Fit<span style="color: #FF6B35;">Choice</span>
 
 A gamified health and fitness application that transforms macro tracking and habit building into an engaging, immersive journey. Built using a modern multi-platform stack, **FitChoice** blends 3D visualization, interactive leveling systems, and precision nutritional tracking to motivate users to achieve their physical wellness goals.
 
@@ -56,6 +56,13 @@ Even though the interface and logic flow are written in JavaScript/TypeScript, t
 ---
 
 ## 📥 Installation & Setup
+
+## 📱 Scan to Download / View Project
+To run or preview the application immediately, scan the QR code below:
+
+<p align="left">
+  <img src="path/to/your/qrcode.png" width="200" alt="FitChoice App QR Code" />
+</p>
 
 Follow these steps to run **FitChoice** locally in your development environment:
 
