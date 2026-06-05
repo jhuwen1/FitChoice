@@ -61,7 +61,7 @@ Even though the interface and logic flow are written in JavaScript/TypeScript, t
 To run or preview the application immediately, scan the QR code below:
 
 <p align="left">
-  <img src="assets/images/Screenshot 2026-06-05 125831.png" width="200" alt="FitChoice App QR Code" />
+  <img src="assets/images/Screenshot 2026-06-05 125831.png" width="600" alt="FitChoice App QR Code" />
 </p>
 
 Follow these steps to run **FitChoice** locally in your development environment:
